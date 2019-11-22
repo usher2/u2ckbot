@@ -1,0 +1,9 @@
+*\~
+*.swp
+*.log
+u2ckbot
+*.sh
+*.conf
+/data/*
+!/data/.keep-me
+

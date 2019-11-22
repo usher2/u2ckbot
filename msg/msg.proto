@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+message IDRequest {
+        int32 query = 1;
+}
+
+message IP4Request {
+        uint32 query = 1;
+}
+
+message IP6Request {
+        bytes query = 1;
+}
+
+message URLRequest {
+        string query = 1;
+}
+
+message DomainRequest {
+        string query = 1;
+}
+
+message SearchResponse {
+        string error = 1;
+        repeated Content results = 2;
+}
+
+message PingRequest {
+        string ping = 1;
+}
+
+message PingResponse {
+        string pong = 1;
+}
+
+service Check {
+  rpc SearchID (IDRequest) returns (SearchResponse);
+  rpc SearchIP4 (IP4Request) returns (SearchResponse);
+  rpc SearchIP6 (IP6Request) returns (SearchResponse);
+  rpc SearchURL (URLRequest) returns (SearchResponse);
+  rpc SearchDomain (DomainRequest) returns (SearchResponse);
+  rpc Ping (PingRequest) returns (PingResponse);
+}
+
+message Content {
+        int64 registryUpdateTime = 1;
+        bytes pack = 2;
+}
+
+
