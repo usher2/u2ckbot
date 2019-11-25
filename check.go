@@ -521,8 +521,23 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res += constructResult(a)
 		}
 	} else {
-		res = "😕 Sorry. I can't parse this...\n"
-		return
+		a, err = searchURL(c, s)
+		if err == nil {
+			a2, err = searchDomain(c, s)
+			if err == nil {
+				if len(a2) > 0 {
+					a = append(a, a2...)
+				}
+			}
+			if len(a) > 0 {
+				res += constructResult(a)
+			} else {
+				res = "😕 Sorry. I can't parse this...\n"
+			}
+		}
+		if err != nil {
+			res = err.Error()
+		}
 	}
 	return
 }
