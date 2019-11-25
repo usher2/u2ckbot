@@ -68,6 +68,8 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 		switch comm {
 		case `help`:
 			reply = HelpMessage
+		case `donate`:
+			reply = DonateMessage
 		case `start`:
 			reply = "Glad to see you, " + UserName + "!"
 		//case `ping`:
