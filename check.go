@@ -26,12 +26,19 @@ const PRINT_LIMIT = 10
 
 func constructContentResult(a []*pb.Content) (res string) {
 	var mass string
+	var oldest int64 = 1<<63 - 1
+	if len(a) == 0 {
+		return
+	}
 	for _, packet := range a {
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
 			Error.Printf("Oooops!!! %s\n", err.Error)
 			continue
+		}
+		if packet.RegistryUpdateTime < oldest {
+			oldest = packet.RegistryUpdateTime
 		}
 		Debug.Printf("%v\n", content)
 		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
@@ -51,6 +58,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 		res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
+		res += fmt.Sprintf("included: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
 		for i, d := range content.Domain {
 			if i >= PRINT_LIMIT {
 				res += fmt.Sprintf("... and %d other domains\n", len(content.Domain)-i)
@@ -106,12 +114,13 @@ func constructContentResult(a []*pb.Content) (res string) {
 	} else {
 		res = mass + res
 	}
-	res += "\n"
+	res += fmt.Sprintf("\n_freshness not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
 	return
 }
 
 func constructResult(a []*pb.Content) (res string) {
 	var mass string
+	var oldest int64 = 1<<63 - 1
 	if len(a) == 0 {
 		return
 	}
@@ -168,6 +177,9 @@ func constructResult(a []*pb.Content) (res string) {
 		if err != nil {
 			Error.Printf("Oooops!!! %s\n", err.Error)
 			continue
+		}
+		if packet.RegistryUpdateTime < oldest {
+			oldest = packet.RegistryUpdateTime
 		}
 		if cnt < PRINT_LIMIT {
 			bt := ""
@@ -268,8 +280,8 @@ func constructResult(a []*pb.Content) (res string) {
 	if cbi > 0 {
 		abt = append(abt, "ip: \u274c")
 	}
-	res += strings.Join(abt, ", ")
-	res += "\n"
+	res += "*blocking types:* " + strings.Join(abt, " | ")
+	res += fmt.Sprintf("\n_relevance not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
 	return
 }
 
@@ -281,11 +293,11 @@ func searchID(c pb.CheckClient, id string) ([]*pb.Content, error) {
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id32)})
 	if err != nil {
 		Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("☠️ Something wrong! Try again later\n")
+		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("⏳ Try again later: %s\n", r.Error)
+		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.Results[:], nil
 }
@@ -297,11 +309,11 @@ func searchIP4(c pb.CheckClient, ip string) ([]*pb.Content, error) {
 	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
 	if err != nil {
 		Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("☠️ Something wrong! Try again later\n")
+		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("⏳ Try again later: %s\n", r.Error)
+		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.Results[:], nil
 }
@@ -317,11 +329,11 @@ func searchIP6(c pb.CheckClient, ip string) ([]*pb.Content, error) {
 	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip6})
 	if err != nil {
 		Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("☠️ Something wrong! Try again later\n")
+		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("⏳ Try again later: %s\n", r.Error)
+		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.Results[:], nil
 }
@@ -337,11 +349,11 @@ func searchURL(c pb.CheckClient, u string) ([]*pb.Content, error) {
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("☠️ Something wrong! Try again later\n")
+		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("⏳ Try again later: %s\n", r.Error)
+		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.Results[:], nil
 }
@@ -354,11 +366,11 @@ func searchDomain(c pb.CheckClient, s string) ([]*pb.Content, error) {
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("☠️ Something wrong! Try again later\n")
+		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("⏳ Try again later: %s\n", r.Error)
+		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.Results[:], nil
 }
@@ -418,7 +430,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		}
 		if err == nil {
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
 			} else {
 				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
 			}
@@ -443,7 +455,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				a = append(a, a2...)
 			}
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
 			} else {
 				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
 				var ips4, ips6 []string
@@ -469,7 +481,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		a, err = searchID(c, s)
 		if err == nil {
 			if len(a) == 0 {
-				res = fmt.Sprintf("🤔 %s *is not found*\n", s)
+				res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
 			}
 		}
 		if err != nil {
@@ -483,7 +495,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			a, err = searchID(c, s[1:])
 			if err == nil {
 				if len(a) == 0 {
-					res = fmt.Sprintf("🤔 %s *is not found*\n", s)
+					res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
 				}
 			}
 		}
@@ -510,7 +522,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		}
 		if err == nil {
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
 			} else {
 				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
 			}
@@ -532,7 +544,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			if len(a) > 0 {
 				res += constructResult(a)
 			} else {
-				res = "😕 Sorry. I can't parse this...\n"
+				res = "\U0001f914 Sorry. I can't parse this...\n"
 			}
 		}
 		if err != nil {
