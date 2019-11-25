@@ -1,19 +1,19 @@
+//go:generate protoc -I msg --go_out=plugins=grpc:msg msg/msg.proto
 package main
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"regexp"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
-)
 
-var HelpMessage string = `Commands:
-/help - This message
-/start - Add telegram user to the bot roster
-`
+	pb "github.com/usher-2/u2ckbot/msg"
+	"google.golang.org/grpc"
+)
 
 type TypeConfig struct {
 	// Config
@@ -45,12 +45,16 @@ func GetUpdatesChan(bot *tb.BotAPI) <-chan tb.Update {
 }
 
 // Handle Chat message
-func Talks(usersFileName string, bot *tb.BotAPI, update tb.Update) {
+func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 	// who writing
-	UserName := update.Message.From.UserName
+	UserName := ""
+	if update.Message.From != nil {
+		UserName = update.Message.From.UserName
+	}
 	// ID of chat/dialog
 	// maiby eq UserID or public chat
 	ChatID := update.Message.Chat.ID
+	bot.Send(tb.NewChatAction(ChatID, "typing"))
 	// message text
 	Text := update.Message.Text
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
@@ -66,10 +70,27 @@ func Talks(usersFileName string, bot *tb.BotAPI, update tb.Update) {
 			reply = HelpMessage
 		case `start`:
 			reply = "Glad to see you, " + UserName + "!"
+		//case `ping`:
+		//	reply = Ping(c)
+		default:
+			reply = "😱 Unknown command\n"
 		}
 		if reply != `` {
-			msg := tb.NewMessage(ChatID, reply)
-			bot.Send(msg)
+			msg := tb.NewMessage(ChatID, reply+Footer)
+			msg.ParseMode = tb.ModeMarkdown
+			msg.DisableWebPagePreview = true
+			_, err := bot.Send(msg)
+			if err != nil {
+				Warning.Printf("Error sending message: %s\n", err.Error())
+			}
+		}
+	} else {
+		msg := tb.NewMessage(ChatID, mainSearch(c, Text)+Footer)
+		msg.ParseMode = tb.ModeMarkdown
+		msg.DisableWebPagePreview = true
+		_, err := bot.Send(msg)
+		if err != nil {
+			Warning.Printf("Error sending message: %s\n", err.Error())
 		}
 	}
 }
@@ -91,7 +112,17 @@ func main() {
 	} else {
 		logInit(os.Stderr, os.Stdout, os.Stderr, os.Stderr)
 	}
-	//readParams(config)
+	//gRPC
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithInsecure())
+	//opts = append(opts, grpc.WithBlock())
+	conn, err := grpc.Dial(config.GetString("CkDumpServer", "localhost:50001"), opts...)
+	if err != nil {
+		fmt.Printf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+	fmt.Printf("Connect...\n")
+	c := pb.NewCheckClient(conn)
 	// connect to Telegram API
 	Bot := GetBot(config.GetString("Token", ""))
 	// init Users cache
@@ -102,7 +133,9 @@ func main() {
 	for {
 		select {
 		case update := <-Updates:
-			go Talks(config.GetString("Userfile", ""), Bot, update)
+			if update.Message != nil { // ignore any non-Message Updates
+				go Talks(c, Bot, update)
+			}
 		}
 	}
 }
