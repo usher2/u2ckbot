@@ -21,20 +21,21 @@ func getIP4(domain string) (res []string) {
 				}
 				cnt := 0
 				for _, rr := range r.Answer {
-					if rr.Header().Rrtype == dns.TypeA {
+					switch rr.Header().Rrtype {
+					case dns.TypeA:
 						if cnt > 8 {
 							continue
 						}
 						res = append(res, rr.(*dns.A).A.String())
 						cnt++
-					} else if rr.Header().Rrtype == dns.TypeCNAME {
+					case dns.TypeCNAME:
 						res1 := getIP4(strings.TrimSuffix(rr.(*dns.CNAME).Target, "."))
 						if len(res1) > 0 {
 							res = append(res, res1...)
 						}
-					} else if rr.Header().Rrtype == dns.TypeRRSIG {
+					case dns.TypeRRSIG:
 						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
-					} else {
+					default:
 						Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
 					}
 				}
@@ -56,21 +57,22 @@ func getIP6(domain string) (res []string) {
 				}
 				cnt := 0
 				for _, rr := range r.Answer {
-					if rr.Header().Rrtype == dns.TypeAAAA {
+					switch rr.Header().Rrtype {
+					case dns.TypeAAAA:
 						if cnt > 8 {
 							continue
 						}
 						res = append(res, rr.(*dns.AAAA).AAAA.String())
 						cnt++
-					} else if rr.Header().Rrtype == dns.TypeCNAME {
+					case dns.TypeCNAME:
 						res1 := getIP6(strings.TrimSuffix(rr.(*dns.CNAME).Target, "."))
 						if len(res1) > 0 {
 							res = append(res, res1...)
 						}
-					} else if rr.Header().Rrtype == dns.TypeRRSIG {
+					case dns.TypeRRSIG:
 						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
-					} else {
-						Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
+					default:
+						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
 					}
 				}
 			}
