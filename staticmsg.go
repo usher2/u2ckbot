@@ -33,7 +33,7 @@ const (
 
 	DonateMessage string = "\u2600 *Пожертвования по подписке:*\n" +
 		"https://www.patreon.com/usher2\n\n" +
-		"\U00002b50 *Традиционные способы:*" +
+		"\U00002b50 *Традиционные способы:*\n" +
 		"PayPal: https://www.paypal.me/schors\n" +
 		"Яндекс.Деньги: http://yasobe.ru/na/schors\n" +
 		"WMP: P603777732896\n" +
