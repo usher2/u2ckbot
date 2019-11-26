@@ -118,13 +118,14 @@ func main() {
 		log.Fatal(err)
 	}
 	logLevel := config.GetString("LogLevel", "Debug")
-	if logLevel == "Info" {
+	switch logLevel {
+	case "Info":
 		logInit(ioutil.Discard, os.Stdout, os.Stderr, os.Stderr)
-	} else if logLevel == "Warning" {
+	case "Warning":
 		logInit(ioutil.Discard, ioutil.Discard, os.Stderr, os.Stderr)
-	} else if logLevel == "Error" {
+	case "Error":
 		logInit(ioutil.Discard, ioutil.Discard, ioutil.Discard, os.Stderr)
-	} else {
+	default:
 		logInit(os.Stderr, os.Stdout, os.Stderr, os.Stderr)
 	}
 	//gRPC

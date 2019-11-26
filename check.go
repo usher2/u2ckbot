@@ -53,15 +53,16 @@ func constructContentResult(a []*pb.Content) (res string) {
 			mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Decision for mass blocking!\n\n"
 		}
 		bt := ""
-		if packet.BlockType == TBLOCK_URL {
+		switch packet.BlockType {
+		case TBLOCK_URL:
 			bt = "\U000026d4 (url) "
-		} else if packet.BlockType == TBLOCK_HTTPS {
+		case TBLOCK_HTTPS:
 			bt = "\U0001f4db (https) "
-		} else if packet.BlockType == TBLOCK_DOMAIN {
+		case TBLOCK_DOMAIN:
 			bt = "\U0001f6ab (domain) "
-		} else if packet.BlockType == TBLOCK_MASK {
+		case TBLOCK_MASK:
 			bt = "\U0001f506 (wildcard) "
-		} else if packet.BlockType == TBLOCK_IP {
+		case TBLOCK_IP:
 			bt = "\u274c (ip) "
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
@@ -255,19 +256,20 @@ func constructResult(a []*pb.Content) (res string) {
 		}
 		if cnt < PRINT_LIMIT {
 			bt := ""
-			if packet.BlockType == TBLOCK_URL {
+			switch packet.BlockType {
+			case TBLOCK_URL:
 				bt = "\U000026d4 "
 				cbu++
-			} else if packet.BlockType == TBLOCK_HTTPS {
+			case TBLOCK_HTTPS:
 				bt = "\U0001f4db "
 				cbh++
-			} else if packet.BlockType == TBLOCK_DOMAIN {
+			case TBLOCK_DOMAIN:
 				bt = "\U0001f6ab "
 				cbd++
-			} else if packet.BlockType == TBLOCK_MASK {
+			case TBLOCK_MASK:
 				bt = "\U0001f506 "
 				cbm++
-			} else if packet.BlockType == TBLOCK_IP {
+			case TBLOCK_IP:
 				bt = "\u274c "
 				cbi++
 			}
