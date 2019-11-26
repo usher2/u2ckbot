@@ -72,7 +72,7 @@ func getIP6(domain string) (res []string) {
 					case dns.TypeRRSIG:
 						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
 					default:
-						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
+						Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
 					}
 				}
 			}
