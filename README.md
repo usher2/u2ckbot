@@ -4,7 +4,7 @@ Usher2 telegram bot for checking Roskomnadzor dump
 IMPORTANT NOTE
 --------------
 
-This program is a part of [https://usher2.club](Usher2) ecosystem. The gRPC service will never be published
+This program is a part of [Usher II](https://usher2.club) ecosystem. The gRPC service will never be published
 
 FEATURES
 -------

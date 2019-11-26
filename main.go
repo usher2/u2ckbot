@@ -11,7 +11,7 @@ import (
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 
-	pb "github.com/usher-2/u2ckbot/msg"
+	pb "github.com/usher2/u2ckbot/msg"
 	"google.golang.org/grpc"
 )
 

@@ -11,7 +11,7 @@ import (
 	"strings"
 	"time"
 
-	pb "github.com/usher-2/u2ckbot/msg"
+	pb "github.com/usher2/u2ckbot/msg"
 )
 
 const (
