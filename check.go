@@ -99,8 +99,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 				res += fmt.Sprintf("... and %d other ips\n", len(content.Ip6)-i)
 				break
 			}
-			ip6 := net.IP([]byte(ip.Ip6))
-			res += fmt.Sprintf("  IP: %s\n", ip6.String())
+			res += fmt.Sprintf("  IP: %s\n", net.IP(ip.Ip6).String())
 		}
 		for i, sb := range content.Subnet4 {
 			if i >= PRINT_LIMIT {
