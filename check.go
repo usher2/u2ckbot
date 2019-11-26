@@ -58,7 +58,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 		res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
-		res += fmt.Sprintf("included: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
+		res += fmt.Sprintf("included: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 		for i, d := range content.Domain {
 			if i >= PRINT_LIMIT {
 				res += fmt.Sprintf("... and %d other domains\n", len(content.Domain)-i)
@@ -114,7 +114,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 	} else {
 		res = mass + res
 	}
-	res += fmt.Sprintf("\n_freshness not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
+	res += fmt.Sprintf("\n_freshness not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 	return
 }
 
@@ -281,7 +281,7 @@ func constructResult(a []*pb.Content) (res string) {
 		abt = append(abt, "ip: \u274c")
 	}
 	res += "*blocking types:* " + strings.Join(abt, " | ")
-	res += fmt.Sprintf("\n_relevance not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC-3", -3*60*60)).Format(time.RFC3339))
+	res += fmt.Sprintf("\n_relevance not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 	return
 }
 
