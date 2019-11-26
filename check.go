@@ -25,6 +25,7 @@ const (
 const PRINT_LIMIT = 10
 
 type TReason struct {
+	Id     int32
 	Aggr   []string
 	Ip     []string
 	Url    []string
@@ -136,7 +137,7 @@ func constructResult(a []*pb.Content) (res string) {
 		return a[i].Id < a[j].Id
 	})
 	ra = make([]TReason, 1)
-	a[0].Id = int32(0)
+	ra[0].Id = a[0].Id
 	if a[0].Aggr != "" {
 		ra[0].Aggr = append(ra[0].Aggr, strings.Split(a[0].Aggr, ",")...)
 	}
@@ -159,10 +160,10 @@ func constructResult(a []*pb.Content) (res string) {
 	}
 	for i := 0; i < len(a)-1; i++ {
 		if a[i].Id == a[i+1].Id {
-			if a[i].Aggr != "" {
+			if a[i+1].Aggr != "" {
 				ra[i].Aggr = append(ra[i].Aggr, strings.Split(a[i+1].Aggr, ",")...)
 			}
-			if a[i].Ip4 != 0 {
+			if a[i+1].Ip4 != 0 {
 				ra[i].Ip = append(ra[i].Ip, fmt.Sprintf("%d.%d.%d.%d",
 					(a[i+1].Ip4&0xFF000000)>>24,
 					(a[i+1].Ip4&0x00FF0000)>>16,
@@ -170,20 +171,20 @@ func constructResult(a []*pb.Content) (res string) {
 					(a[i+1].Ip4&0x000000FF),
 				))
 			}
-			if len(a[i].Ip6) != 0 {
+			if len(a[i+1].Ip6) != 0 {
 				ra[i].Ip = append(ra[i].Ip, net.IP(a[i+1].Ip6).String())
 			}
-			if a[i].Domain != "" {
+			if a[i+1].Domain != "" {
 				ra[i].Domain = append(ra[i].Domain, a[i+1].Domain)
 			}
-			if a[i].Url != "" {
+			if a[i+1].Url != "" {
 				ra[i].Url = append(ra[i].Url, a[i+1].Url)
 			}
 			a = append(a[:i], a[i+1:]...)
 			i--
 		} else {
 			ra = append(ra, TReason{})
-			a[i+1].Id = int32(i + 1)
+			ra[i+1].Id = a[i+1].Id
 			if a[i+1].Aggr != "" {
 				ra[i+1].Aggr = append(ra[i+1].Aggr, strings.Split(a[i+1].Aggr, ",")...)
 			}
@@ -240,7 +241,13 @@ func constructResult(a []*pb.Content) (res string) {
 		if packet.RegistryUpdateTime < oldest {
 			oldest = packet.RegistryUpdateTime
 		}
-		if len(ra[packet.Id].Aggr) != 0 {
+		var req TReason
+		for _, req = range ra {
+			if req.Id == packet.Id {
+				break
+			}
+		}
+		if len(req.Aggr) != 0 {
 			if packet.BlockType == TBLOCK_IP {
 				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Mass blocked resource!\n\n"
 			}
@@ -265,22 +272,22 @@ func constructResult(a []*pb.Content) (res string) {
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 			res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
-			if len(ra[packet.Id].Aggr) != 0 {
-				for _, nw := range ra[packet.Id].Aggr {
+			if len(req.Aggr) != 0 {
+				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _as subnet_ %s\n", nw)
 				}
 			}
-			if len(ra[packet.Id].Ip) != 0 {
-				for _, ip := range ra[packet.Id].Ip {
+			if len(req.Ip) != 0 {
+				for _, ip := range req.Ip {
 					res += fmt.Sprintf("    _as ip_ %s\n", ip)
 				}
 			}
-			if len(ra[packet.Id].Domain) != 0 {
-				for _, domain := range ra[packet.Id].Domain {
+			if len(req.Domain) != 0 {
+				for _, domain := range req.Domain {
 					res += fmt.Sprintf("    _as domain_ %s\n", Sanitize(PrintedDomain(domain)))
 				}
 			}
-			if len(ra[packet.Id].Url) != 0 {
+			if len(req.Url) != 0 {
 				for _, u := range ra[packet.Id].Url {
 					res += fmt.Sprintf("    _as url_ %s\n", Sanitize(PrintedDomain(u)))
 				}
