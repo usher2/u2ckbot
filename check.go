@@ -577,7 +577,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = "\U0001f914 Sorry. I can't parse this...\n"
+			res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
 		} else {
 			res += constructContentResult(a)
 		}
@@ -621,7 +621,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			if len(a) > 0 {
 				res += constructResult(a)
 			} else {
-				res = "\U0001f914 Sorry. I can't parse this...\n"
+				res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
 			}
 		}
 		if err != nil {
