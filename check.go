@@ -24,6 +24,13 @@ const (
 
 const PRINT_LIMIT = 10
 
+type TReason struct {
+	Aggr   []string
+	Ip     []string
+	Url    []string
+	Domain []string
+}
+
 func constructContentResult(a []*pb.Content) (res string) {
 	var mass string
 	var oldest int64 = 1<<63 - 1
@@ -121,31 +128,83 @@ func constructContentResult(a []*pb.Content) (res string) {
 func constructResult(a []*pb.Content) (res string) {
 	var mass string
 	var oldest int64 = 1<<63 - 1
+	var ra []TReason
 	if len(a) == 0 {
 		return
 	}
 	sort.Slice(a, func(i, j int) bool {
 		return a[i].Id < a[j].Id
 	})
+	ra = make([]TReason, 1)
+	a[0].Id = int32(0)
+	if a[0].Aggr != "" {
+		ra[0].Aggr = append(ra[0].Aggr, strings.Split(a[0].Aggr, ",")...)
+	}
+	if a[0].Ip4 != 0 {
+		ra[0].Ip = append(ra[0].Ip, fmt.Sprintf("%d.%d.%d.%d",
+			(a[0].Ip4&0xFF000000)>>24,
+			(a[0].Ip4&0x00FF0000)>>16,
+			(a[0].Ip4&0x0000FF00)>>8,
+			(a[0].Ip4&0x000000FF),
+		))
+	}
+	if len(a[0].Ip6) != 0 {
+		ra[0].Ip = append(ra[0].Ip, net.IP(a[0].Ip6).String())
+	}
+	if a[0].Domain != "" {
+		ra[0].Domain = append(ra[0].Domain, PrintedDomain(a[0].Domain))
+	}
+	if a[0].Url != "" {
+		ra[0].Url = append(ra[0].Url, PrintedDomain(a[0].Url))
+	}
 	for i := 0; i < len(a)-1; i++ {
 		if a[i].Id == a[i+1].Id {
 			if a[i].Aggr != "" {
-				a[i+1].Aggr = a[i].Aggr
+				ra[i].Aggr = append(ra[i].Aggr, strings.Split(a[i+1].Aggr, ",")...)
 			}
 			if a[i].Ip4 != 0 {
-				a[i+1].Ip4 = a[i].Ip4
+				ra[i].Ip = append(ra[i].Ip, fmt.Sprintf("%d.%d.%d.%d",
+					(a[i+1].Ip4&0xFF000000)>>24,
+					(a[i+1].Ip4&0x00FF0000)>>16,
+					(a[i+1].Ip4&0x0000FF00)>>8,
+					(a[i+1].Ip4&0x000000FF),
+				))
 			}
 			if len(a[i].Ip6) != 0 {
-				a[i+1].Ip6 = a[i].Ip6
+				ra[i].Ip = append(ra[i].Ip, net.IP(a[i+1].Ip6).String())
 			}
 			if a[i].Domain != "" {
-				a[i+1].Domain = a[i].Domain
+				ra[i].Domain = append(ra[i].Domain, a[i+1].Domain)
 			}
 			if a[i].Url != "" {
-				a[i+1].Url = a[i].Url
+				ra[i].Url = append(ra[i].Url, a[i+1].Url)
 			}
 			a = append(a[:i], a[i+1:]...)
 			i--
+		} else {
+			ra = append(ra, TReason{})
+			a[i+1].Id = int32(i + 1)
+			if a[i+1].Aggr != "" {
+				ra[i+1].Aggr = append(ra[i+1].Aggr, strings.Split(a[i+1].Aggr, ",")...)
+			}
+			if a[i+1].Ip4 != 0 {
+				ra[i+1].Ip = append(ra[i+1].Ip, fmt.Sprintf("%d.%d.%d.%d",
+					(a[i+1].Ip4&0xFF000000)>>24,
+					(a[i+1].Ip4&0x00FF0000)>>16,
+					(a[i+1].Ip4&0x0000FF00)>>8,
+					(a[i+1].Ip4&0x000000FF),
+				))
+			}
+			if len(a[i+1].Ip6) != 0 {
+				ra[i+1].Ip = append(ra[i+1].Ip, net.IP(a[i+1].Ip6).String())
+			}
+			if a[i+1].Domain != "" {
+				ra[i+1].Domain = append(ra[i+1].Domain, a[i+1].Domain)
+			}
+			if a[i+1].Url != "" {
+				ra[i+1].Url = append(ra[i+1].Url, a[i+1].Url)
+			}
+
 		}
 	}
 	sort.Slice(a, func(j, i int) bool {
@@ -181,6 +240,11 @@ func constructResult(a []*pb.Content) (res string) {
 		if packet.RegistryUpdateTime < oldest {
 			oldest = packet.RegistryUpdateTime
 		}
+		if len(ra[packet.Id].Aggr) != 0 {
+			if packet.BlockType == TBLOCK_IP {
+				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Mass blocked resource!\n\n"
+			}
+		}
 		if cnt < PRINT_LIMIT {
 			bt := ""
 			if packet.BlockType == TBLOCK_URL {
@@ -201,33 +265,25 @@ func constructResult(a []*pb.Content) (res string) {
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 			res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
-		}
-		if packet.Aggr != "" {
-			if packet.BlockType == TBLOCK_IP {
-				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Mass blocked resource!\n\n"
+			if len(ra[packet.Id].Aggr) != 0 {
+				for _, nw := range ra[packet.Id].Aggr {
+					res += fmt.Sprintf("    _as subnet_ %s\n", nw)
+				}
 			}
-			for _, nw := range strings.Split(packet.Aggr, ",") {
-				res += fmt.Sprintf("    _as subnet_ %s\n", nw)
+			if len(ra[packet.Id].Ip) != 0 {
+				for _, ip := range ra[packet.Id].Ip {
+					res += fmt.Sprintf("    _as ip_ %s\n", ip)
+				}
 			}
-		}
-		if cnt < PRINT_LIMIT {
-			if packet.Ip4 != 0 {
-				ip := fmt.Sprintf("%d.%d.%d.%d",
-					(packet.Ip4&0xFF000000)>>24,
-					(packet.Ip4&0x00FF0000)>>16,
-					(packet.Ip4&0x0000FF00)>>8,
-					(packet.Ip4 & 0x000000FF),
-				)
-				res += fmt.Sprintf("    _as ip_ %s\n", ip)
+			if len(ra[packet.Id].Domain) != 0 {
+				for _, domain := range ra[packet.Id].Domain {
+					res += fmt.Sprintf("    _as domain_ %s\n", Sanitize(PrintedDomain(domain)))
+				}
 			}
-			if len(packet.Ip6) != 0 {
-				res += fmt.Sprintf("    _as ip_ %s\n", net.IP(packet.Ip6).String())
-			}
-			if packet.Domain != "" {
-				res += fmt.Sprintf("    _as domain_ %s\n", PrintedDomain(packet.Domain))
-			}
-			if packet.Url != "" {
-				res += fmt.Sprintf("    _as url_ %s\n", packet.Url)
+			if len(ra[packet.Id].Url) != 0 {
+				for _, u := range ra[packet.Id].Url {
+					res += fmt.Sprintf("    _as url_ %s\n", Sanitize(PrintedDomain(u)))
+				}
 			}
 			res += "\n"
 		}
