@@ -64,7 +64,10 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 	if len(matches) > 0 {
 		var reply string
 		comm := matches[1]
-		//commArgs := regexp.MustCompile(`\s+`).Split(matches[2], -1)
+		commArgs := []string{""}
+		if len(matches) >= 3 {
+			commArgs = regexp.MustCompile(`\s+`).Split(matches[2], -1)
+		}
 		switch comm {
 		case `help`:
 			reply = HelpMessage
@@ -72,6 +75,12 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 			reply = HelpMessageRu
 		case `donate`:
 			reply = DonateMessage
+		case `check` || `ck`:
+			if len(commArgs) > 0 {
+				reply = mainSearch(c, commArgs[0])
+			} else {
+				reply = "😱 Noting to search\n"
+			}
 		case `start`:
 			reply = "Glad to see you, " + UserName + "!"
 		//case `ping`:
