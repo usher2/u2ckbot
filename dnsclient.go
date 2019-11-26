@@ -12,7 +12,7 @@ const ATTEMPTS = 1
 const TIMEOUT = 5
 
 func getIP4(domain string) (res []string) {
-	if r, _, err := GetRR(domain, []string{"127.0.0.1:53"}, dns.TypeA); err == nil {
+	if r, _, err := GetRR(domain, []string{"127.0.0.11:53"}, dns.TypeA); err == nil {
 		switch r.Rcode {
 		case dns.RcodeSuccess:
 			if len(r.Answer) > 0 {
