@@ -473,10 +473,24 @@ func refSearch(c pb.CheckClient, s string) ([]*pb.Content, []string, []string, e
 func mainSearch(c pb.CheckClient, s string) (res string) {
 	var err error
 	var a, a2 []*pb.Content
-	ip := net.ParseIP(s)
-	_u, _ur := url.Parse(s)
-	_c, _ := strconv.Atoi(s)
 	domain := NormalizeDomain(s)
+	if len(s) > 2 {
+		if s[0] == '"' && s[len(s)-1] == '"' {
+			s = s[1 : len(s)-2]
+			domain = s
+		}
+	}
+	_u, _ur := url.Parse(s)
+	if _ur == nil && _u.IsAbs() &&
+		(_u.Scheme == "http" || _u.Scheme == "https") &&
+		(_u.Port() == "80" || _u.Port() == "443" || _u.Port() == "") &&
+		(_u.RequestURI() == "" || _u.RequestURI() == "/") {
+		s = _u.Hostname()
+		domain = NormalizeDomain(s)
+		_ur = fmt.Errorf("fake")
+	}
+	ip := net.ParseIP(s)
+	_c, _ := strconv.Atoi(s)
 	if ip != nil {
 		if ip.To4() != nil {
 			a, err = searchIP4(c, s)
@@ -499,7 +513,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = err.Error() + "\n"
 		} else {
 			res += constructResult(a)
 		}
@@ -536,7 +550,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = err.Error() + "\n"
 		} else {
 			res += constructResult(a)
 		}
@@ -548,7 +562,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = err.Error() + "\n"
 		} else {
 			res += constructContentResult(a)
 		}
@@ -563,7 +577,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = "\U0001f914 Sorry. I can't parse this...\n"
 		} else {
 			res += constructContentResult(a)
 		}
@@ -591,7 +605,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = err.Error() + "\n"
 		} else {
 			res += constructResult(a)
 		}
@@ -611,7 +625,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err != nil {
-			res = err.Error()
+			res = err.Error() + "\n"
 		}
 	}
 	return
