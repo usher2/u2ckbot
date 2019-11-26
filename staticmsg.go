@@ -4,9 +4,11 @@ const (
 	HelpMessage string = "*Commands:*\n" +
 		"/help - This message\n" +
 		"/helpru - руководство на русском\n\n" +
+		"/ck\n/check - check something - IP-address or Domain or URL\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
 		"Send a record ID (ussualy started with #) to the bot for details\n\n" +
+		"Or use /ck or /check commands in group chats\n\n" +
 		"*Legend*\n\n" +
 		"\U000026d4 URL blocking type. It's default blockig type. Providers MUST block ONLY plain HTTP traffic with certain URL\n" +
 		"\U0001f4db HTTPS blocking type. It's not standart blocking type. It's URL blocking type but with HTTPS scheme. Providers MUST block domain name from URL by SNI or by DNS interception\n" +
@@ -17,9 +19,11 @@ const (
 	HelpMessageRu string = "*Команды:*\n" +
 		"/help - manual in english\n" +
 		"/helpru - это сообщение\n\n" +
+		"/ck\n/check - проверить IP адрес, домен или URL\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
-		"Отправьте ID записи (обозначена '#' в ответах) боту для получения подробностей\n\n" +
+		"Отправьте ID записи (обозначена '#' в ответах) боту для получения подробностей\n" +
+		"Или воспользуйтесь командами /ck или /check в группах\n\n" +
 		"*Обозначения*\n\n" +
 		"\U000026d4 блокировка по URL. Тип блокировки по умолчанию. Провайдеры ОБЯЗАНЫ фильтровать ТОЛЬКО простой HTTP трафик на определённые URL\n" +
 		"\U0001f4db блокировка HTTPS. Неформальный тип блокировк. Это блокировка по URL с HTTPS схемой. Провайдеры ОБЯЗАНЫ блокировать трафик на домен из URL путем чтения SNI или путём перехвата DNS запросов\n" +
