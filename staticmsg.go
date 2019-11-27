@@ -55,5 +55,5 @@ const (
 		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n"
 
 	Footer string = "--- \n" +
-		"https://t.me/usher2 project\n/donate for coffee\n/help for manual | /helpru - руководство\n"
+		"Part of @usher2 project\n"
 )
