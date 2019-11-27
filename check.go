@@ -291,7 +291,7 @@ func constructResult(a []*pb.Content) (res string) {
 				}
 			}
 			if len(req.Url) != 0 {
-				for _, u := range ra[packet.Id].Url {
+				for _, u := range req.Url {
 					res += fmt.Sprintf("    _as url_ %s\n", Sanitize(PrintedDomain(u)))
 				}
 			}
