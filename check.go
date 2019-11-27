@@ -476,6 +476,10 @@ func refSearch(c pb.CheckClient, s string) ([]*pb.Content, []string, []string, e
 func mainSearch(c pb.CheckClient, s string) (res string) {
 	var err error
 	var a, a2 []*pb.Content
+	if len(s) == 0 {
+		res = fmt.Sprintf("\U0001f914 What did you mean?..\n")
+		return
+	}
 	domain := NormalizeDomain(s)
 	if len(s) > 2 {
 		if s[0] == '"' && s[len(s)-1] == '"' {
