@@ -48,7 +48,7 @@ func getIP4(domain string) (res []string) {
 }
 
 func getIP6(domain string) (res []string) {
-	if r, _, err := GetRR(domain, []string{"127.0.0.1:53"}, dns.TypeAAAA); err == nil {
+	if r, _, err := GetRR(domain, []string{"127.0.0.11:53"}, dns.TypeAAAA); err == nil {
 		switch r.Rcode {
 		case dns.RcodeSuccess:
 			if len(r.Answer) > 0 {
