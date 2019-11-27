@@ -3,8 +3,8 @@ package main
 const (
 	HelpMessage string = "*Commands:*\n" +
 		"/help - This message\n" +
-		"/helpru - руководство на русском\n\n" +
-		"/ck\n/check - check something - IP-address or Domain or URL\n" +
+		"/helpru - руководство на русском\n" +
+		"/ck\n/check - check something - IP-address or Domain or URL\n\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
 		"Send a record ID (ussualy started with #) to the bot for details\n\n" +
@@ -18,8 +18,8 @@ const (
 
 	HelpMessageRu string = "*Команды:*\n" +
 		"/help - manual in english\n" +
-		"/helpru - это сообщение\n\n" +
-		"/ck\n/check - проверить IP адрес, домен или URL\n" +
+		"/helpru - это сообщение\n" +
+		"/ck\n/check - проверить IP адрес, домен или URL\n\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
 		"Отправьте ID записи (обозначена '#' в ответах) боту для получения подробностей\n" +
