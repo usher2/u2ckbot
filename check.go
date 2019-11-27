@@ -91,7 +91,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 				(ip.Ip4&0xFF000000)>>24,
 				(ip.Ip4&0x00FF0000)>>16,
 				(ip.Ip4&0x0000FF00)>>8,
-				(ip.Ip4 & 0x000000FF),
+				ip.Ip4 & 0x000000FF,
 			)
 			res += fmt.Sprintf("  IP: %s\n", ip4)
 		}
@@ -147,7 +147,7 @@ func constructResult(a []*pb.Content) (res string) {
 			(a[0].Ip4&0xFF000000)>>24,
 			(a[0].Ip4&0x00FF0000)>>16,
 			(a[0].Ip4&0x0000FF00)>>8,
-			(a[0].Ip4&0x000000FF),
+			a[0].Ip4&0x000000FF,
 		))
 	}
 	if len(a[0].Ip6) != 0 {
@@ -169,7 +169,7 @@ func constructResult(a []*pb.Content) (res string) {
 					(a[i+1].Ip4&0xFF000000)>>24,
 					(a[i+1].Ip4&0x00FF0000)>>16,
 					(a[i+1].Ip4&0x0000FF00)>>8,
-					(a[i+1].Ip4&0x000000FF),
+					a[i+1].Ip4&0x000000FF,
 				))
 			}
 			if len(a[i+1].Ip6) != 0 {
@@ -194,7 +194,7 @@ func constructResult(a []*pb.Content) (res string) {
 					(a[i+1].Ip4&0xFF000000)>>24,
 					(a[i+1].Ip4&0x00FF0000)>>16,
 					(a[i+1].Ip4&0x0000FF00)>>8,
-					(a[i+1].Ip4&0x000000FF),
+					a[i+1].Ip4&0x000000FF,
 				))
 			}
 			if len(a[i+1].Ip6) != 0 {
@@ -574,7 +574,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res += constructContentResult(a)
 		}
 	} else if s[0] == '#' {
-		_, err = strconv.Atoi(string(s[1:]))
+		_, err = strconv.Atoi(s[1:])
 		if err == nil {
 			a, err = searchID(c, s[1:])
 			if err == nil {
