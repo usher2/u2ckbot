@@ -39,7 +39,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Oooops!!! %s\n", err.Error)
+			Error.Printf("Oooops!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -63,7 +63,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 			bt = "\u274c (ip) "
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-		res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
+		res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
 		res += fmt.Sprintf("included: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 		for i, d := range content.Domain {
 			if i >= PRINT_LIMIT {
@@ -84,13 +84,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 				res += fmt.Sprintf("... and %d other ips\n", len(content.Ip4)-i)
 				break
 			}
-			ip4 := fmt.Sprintf("%d.%d.%d.%d",
-				(ip.Ip4&0xFF000000)>>24,
-				(ip.Ip4&0x00FF0000)>>16,
-				(ip.Ip4&0x0000FF00)>>8,
-				ip.Ip4&0x000000FF,
-			)
-			res += fmt.Sprintf("  IP: %s\n", ip4)
+			res += fmt.Sprintf("  IP: %s\n", int2Ip4(ip.Ip4))
 		}
 		for i, ip := range content.Ip6 {
 			if i >= PRINT_LIMIT {
@@ -140,12 +134,7 @@ func constructResult(a []*pb.Content) (res string) {
 		ra[0].Aggr = append(ra[0].Aggr, strings.Split(a[0].Aggr, ",")...)
 	}
 	if a[0].Ip4 != 0 {
-		ra[0].Ip = append(ra[0].Ip, fmt.Sprintf("%d.%d.%d.%d",
-			(a[0].Ip4&0xFF000000)>>24,
-			(a[0].Ip4&0x00FF0000)>>16,
-			(a[0].Ip4&0x0000FF00)>>8,
-			a[0].Ip4&0x000000FF,
-		))
+		ra[0].Ip = append(ra[0].Ip, int2Ip4(a[0].Ip4))
 	}
 	if len(a[0].Ip6) != 0 {
 		ra[0].Ip = append(ra[0].Ip, net.IP(a[0].Ip6).String())
@@ -162,12 +151,7 @@ func constructResult(a []*pb.Content) (res string) {
 				ra[i].Aggr = append(ra[i].Aggr, strings.Split(a[i+1].Aggr, ",")...)
 			}
 			if a[i+1].Ip4 != 0 {
-				ra[i].Ip = append(ra[i].Ip, fmt.Sprintf("%d.%d.%d.%d",
-					(a[i+1].Ip4&0xFF000000)>>24,
-					(a[i+1].Ip4&0x00FF0000)>>16,
-					(a[i+1].Ip4&0x0000FF00)>>8,
-					a[i+1].Ip4&0x000000FF,
-				))
+				ra[i].Ip = append(ra[i].Ip, int2Ip4(a[i+1].Ip4))
 			}
 			if len(a[i+1].Ip6) != 0 {
 				ra[i].Ip = append(ra[i].Ip, net.IP(a[i+1].Ip6).String())
@@ -187,12 +171,7 @@ func constructResult(a []*pb.Content) (res string) {
 				ra[i+1].Aggr = append(ra[i+1].Aggr, strings.Split(a[i+1].Aggr, ",")...)
 			}
 			if a[i+1].Ip4 != 0 {
-				ra[i+1].Ip = append(ra[i+1].Ip, fmt.Sprintf("%d.%d.%d.%d",
-					(a[i+1].Ip4&0xFF000000)>>24,
-					(a[i+1].Ip4&0x00FF0000)>>16,
-					(a[i+1].Ip4&0x0000FF00)>>8,
-					a[i+1].Ip4&0x000000FF,
-				))
+				ra[i+1].Ip = append(ra[i+1].Ip, int2Ip4(a[i+1].Ip4))
 			}
 			if len(a[i+1].Ip6) != 0 {
 				ip6 := net.IP(a[i+1].Ip6)
@@ -234,7 +213,7 @@ func constructResult(a []*pb.Content) (res string) {
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Oooops!!! %s\n", err.Error)
+			Error.Printf("Oooops!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -271,7 +250,7 @@ func constructResult(a []*pb.Content) (res string) {
 				cbi++
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-			res += fmt.Sprintf("%s #%d %s\n", bt, content.Id, dcs)
+			res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _as subnet_ %s\n", nw)

@@ -27,7 +27,7 @@ func GetBot(token string) *tb.BotAPI {
 	if err != nil {
 		log.Panic(err)
 	}
-	bot.Debug = true
+	//bot.Debug = true
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	return bot
 }

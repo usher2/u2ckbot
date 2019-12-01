@@ -40,7 +40,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 			reply = HelpMessageRu
 		case `donate`:
 			reply = DonateMessage
-		case `ck`, `check`:
+		case `n_`, `ck`, `check`:
 			if len(commArgs) > 0 {
 				reply = mainSearch(c, commArgs[len(commArgs)-1])
 			} else {
