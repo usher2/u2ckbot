@@ -123,7 +123,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 	} else {
 		res = mass + res
 	}
-	res += fmt.Sprintf("\n_relevance not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+	res += fmt.Sprintf("\n_data was synced not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 	return
 }
 
@@ -347,7 +347,7 @@ func constructResult(a []*pb.Content) (res string) {
 		abt = append(abt, "ip: \u274c")
 	}
 	res += "*blocking types:* " + strings.Join(abt, " | ")
-	res += fmt.Sprintf("\n_relevance not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+	res += fmt.Sprintf("\n_data was synced not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 	return
 }
 

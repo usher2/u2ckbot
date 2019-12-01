@@ -82,7 +82,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 				reply = "😱 Noting to search\n"
 			}
 		case `start`:
-			reply = "Glad to see you, " + UserName + "!"
+			reply = "Glad to see you, " + UserName + "!\n"
 		//case `ping`:
 		//	reply = Ping(c)
 		default:
