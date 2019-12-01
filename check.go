@@ -91,7 +91,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 				(ip.Ip4&0xFF000000)>>24,
 				(ip.Ip4&0x00FF0000)>>16,
 				(ip.Ip4&0x0000FF00)>>8,
-				ip.Ip4 & 0x000000FF,
+				ip.Ip4&0x000000FF,
 			)
 			res += fmt.Sprintf("  IP: %s\n", ip4)
 		}

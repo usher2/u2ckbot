@@ -148,7 +148,13 @@ func main() {
 		select {
 		case update := <-Updates:
 			if update.Message != nil { // ignore any non-Message Updates
-				go Talks(c, Bot, update)
+				if update.Message.Text != "" {
+					if update.Message.Chat.Type == "private" ||
+						(update.Message.ReplyToMessage == nil &&
+							update.Message.ForwardFromMessageID == 0) {
+						go Talks(c, Bot, update)
+					}
+				}
 			}
 		}
 	}
