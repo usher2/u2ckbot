@@ -21,12 +21,31 @@ const (
 
 const PRINT_LIMIT = 10
 
+const (
+	DTIME12 = 12 * 60 * 60
+	DTIME3  = 3 * 60 * 60
+)
+
 type TReason struct {
 	Id     int32
 	Aggr   []string
 	Ip     []string
 	Url    []string
 	Domain []string
+}
+
+func printUpToDate(t int64) string {
+	var r rune
+	d := time.Now().Unix() - t
+	switch {
+	case d > DTIME12:
+		r = 0x2b55
+	case d > DTIME3:
+		r = 0x000026a0
+	default:
+		r = 0x2705
+	}
+	return fmt.Sprintf("\n%c _The data was synced not earlier than:_ %s\n", r, time.Unix(t, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 }
 
 func constructContentResult(a []*pb.Content) (res string) {
@@ -114,7 +133,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 	} else {
 		res = mass + res
 	}
-	res += fmt.Sprintf("\n_data was synced not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+	res += printUpToDate(oldest)
 	return
 }
 
@@ -323,6 +342,6 @@ func constructResult(a []*pb.Content) (res string) {
 		abt = append(abt, "ip: \u274c")
 	}
 	res += "*blocking types:* " + strings.Join(abt, " | ")
-	res += fmt.Sprintf("\n_data was synced not earlier than:_ %s\n", time.Unix(oldest, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+	res += printUpToDate(oldest)
 	return
 }
