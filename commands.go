@@ -3,6 +3,7 @@ package main
 
 import (
 	"regexp"
+	"strings"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 
@@ -75,6 +76,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
 // Handle commands
 func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inlineId string, text string) {
 	var reply string
+	var botName = bot.Self.UserName
 	if chat != nil {
 		bot.Send(tb.NewChatAction(chat.ID, "typing"))
 	}
@@ -87,6 +89,11 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		commArgs := []string{""}
 		if len(matches) >= 3 {
 			commArgs = regexp.MustCompile(`\s+`).Split(matches[2], -1)
+			if botName != "" {
+				for i, s := range commArgs {
+					commArgs[i] = strings.TrimSuffix(s, botName)
+				}
+			}
 		}
 		switch comm {
 		case `help`:

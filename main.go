@@ -76,8 +76,6 @@ func main() {
 	c := pb.NewCheckClient(conn)
 	// connect to Telegram API
 	bot := GetBot(config.GetString("Token", ""), logLevel)
-	// init Users cache
-	//ReadUsers(config.UserFile)
 	// init update chan
 	updates := GetUpdatesChan(bot)
 	// read updates
