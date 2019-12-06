@@ -17,6 +17,7 @@ func NormalizeDomain(domain string) string {
 		domain = domain[:_c]
 	}
 	domain = strings.TrimPrefix(domain, "*.")
+	domain = strings.TrimSuffix(domain, ".")
 	domain, _ = idna.ToASCII(domain)
 	domain = strings.ToLower(domain)
 	return domain
