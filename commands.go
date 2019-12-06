@@ -76,7 +76,6 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
 // Handle commands
 func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inlineId string, text string) {
 	var reply string
-	var botName = bot.Self.UserName
 	if chat != nil {
 		bot.Send(tb.NewChatAction(chat.ID, "typing"))
 	}
@@ -89,9 +88,9 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		commArgs := []string{""}
 		if len(matches) >= 3 {
 			commArgs = regexp.MustCompile(`\s+`).Split(matches[2], -1)
-			if botName != "" {
+			if bot.Self.UserName != "" {
 				for i, s := range commArgs {
-					commArgs[i] = strings.TrimSuffix(s, botName)
+					commArgs[i] = strings.TrimSuffix(s, "@"+bot.Self.UserName)
 				}
 			}
 		}
@@ -110,12 +109,12 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			}
 		case `start`:
 			reply = "Glad to see you, " + uname + "!\n"
-		//case `ping`:
-		//	reply = Ping(c)
-		default:
-			reply = "😱 Unknown command\n"
+			//case `ping`:
+			//	reply = Ping(c)
+			//default:
+			//	reply = "😱 Unknown command\n"
 		}
-		if reply != `` {
+		if reply != "" {
 			sendMessage(bot, chat, inlineId, reply)
 		}
 	} else {
