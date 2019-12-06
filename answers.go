@@ -21,6 +21,8 @@ const (
 
 const PRINT_LIMIT = 10
 
+const MAX_TIMESTAMP int64 = 1<<63 - 1
+
 const (
 	DTIME12 = 12 * 60 * 60
 	DTIME3  = 3 * 60 * 60
@@ -50,7 +52,7 @@ func printUpToDate(t int64) string {
 
 func constructContentResult(a []*pb.Content) (res string) {
 	var mass string
-	var oldest int64 = 1<<63 - 1
+	var oldest int64 = MAX_TIMESTAMP
 	if len(a) == 0 {
 		return
 	}
@@ -139,7 +141,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 
 func constructResult(a []*pb.Content) (res string) {
 	var mass string
-	var oldest int64 = 1<<63 - 1
+	var oldest int64 = MAX_TIMESTAMP
 	var ra []TReason
 	if len(a) == 0 {
 		return

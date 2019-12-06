@@ -12,7 +12,7 @@ import (
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
-func searchID(c pb.CheckClient, id string) ([]*pb.Content, error) {
+func searchID(c pb.CheckClient, id string) (int64, []*pb.Content, error) {
 	Info.Printf("Looking for content: %s\n", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
@@ -20,52 +20,52 @@ func searchID(c pb.CheckClient, id string) ([]*pb.Content, error) {
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id32)})
 	if err != nil {
 		Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
-	return r.Results[:], nil
+	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func searchIP4(c pb.CheckClient, ip string) ([]*pb.Content, error) {
+func searchIP4(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
 	Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
 	if err != nil {
 		Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
-	return r.Results[:], nil
+	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func searchIP6(c pb.CheckClient, ip string) ([]*pb.Content, error) {
+func searchIP6(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
 	Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ip6 := net.ParseIP(ip)
 	if len(ip6) == 0 {
-		return nil, fmt.Errorf("Can't parse IP: %s\n", ip)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("Can't parse IP: %s\n", ip)
 	}
 	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip6})
 	if err != nil {
 		Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
-	return r.Results[:], nil
+	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func searchURL(c pb.CheckClient, u string) ([]*pb.Content, error) {
+func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, error) {
 	_url := NormalizeUrl(u)
 	if _url != u {
 		fmt.Printf("Input was %s\n", u)
@@ -76,16 +76,16 @@ func searchURL(c pb.CheckClient, u string) ([]*pb.Content, error) {
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
-	return r.Results[:], nil
+	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func searchDomain(c pb.CheckClient, s string) ([]*pb.Content, error) {
+func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
 	domain := NormalizeDomain(s)
 	Info.Printf("Looking for %s\n", domain)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
@@ -93,24 +93,31 @@ func searchDomain(c pb.CheckClient, s string) ([]*pb.Content, error) {
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
-	return r.Results[:], nil
+	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func refSearch(c pb.CheckClient, s string) ([]*pb.Content, []string, []string, error) {
-	var err error
-	var a, a2 []*pb.Content
-	var ips4, ips6 []string
+func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []string, error) {
+	var (
+		err        error
+		oldest     int64 = MAX_TIMESTAMP
+		utime      int64
+		a, a2      []*pb.Content
+		ips4, ips6 []string
+	)
 	domain := NormalizeDomain(s)
 	ips4 = getIP4(domain)
 	for _, ip := range ips4 {
-		a2, err = searchIP4(c, ip)
+		utime, a2, err = searchIP4(c, ip)
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			a = append(a, a2...)
 		} else {
 			break
@@ -119,8 +126,11 @@ func refSearch(c pb.CheckClient, s string) ([]*pb.Content, []string, []string, e
 	if err == nil {
 		ips6 = getIP6(domain)
 		for _, ip := range ips6 {
-			a2, err = searchIP6(c, ip)
+			utime, a2, err = searchIP6(c, ip)
 			if err == nil {
+				if utime < oldest {
+					oldest = utime
+				}
 				a = append(a, a2...)
 			} else {
 				break
@@ -128,15 +138,19 @@ func refSearch(c pb.CheckClient, s string) ([]*pb.Content, []string, []string, e
 		}
 	}
 	if err != nil {
-		return nil, ips4, ips6, err
+		return oldest, nil, ips4, ips6, err
 	} else {
-		return a, ips4, ips6, nil
+		return oldest, a, ips4, ips6, nil
 	}
 }
 
 func mainSearch(c pb.CheckClient, s string) (res string) {
-	var err error
-	var a, a2 []*pb.Content
+	var (
+		err    error
+		a, a2  []*pb.Content
+		oldest int64 = MAX_TIMESTAMP
+		utime  int64
+	)
 	if len(s) == 0 {
 		res = fmt.Sprintf("\U0001f914 What did you mean?..\n")
 		return
@@ -161,23 +175,33 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 	_c, _ := strconv.Atoi(s)
 	if ip != nil {
 		if ip.To4() != nil {
-			a, err = searchIP4(c, s)
+			utime, a, err = searchIP4(c, s)
 			if err == nil {
-				a2, err = searchDomain(c, s)
+				if utime < oldest {
+					oldest = utime
+				}
+				utime, a2, err = searchDomain(c, s)
 				if err == nil {
+					if utime < oldest {
+						oldest = utime
+					}
 					if len(a2) > 0 {
 						a = append(a, a2...)
 					}
 				}
 			}
 		} else {
-			a, err = searchIP6(c, s)
+			utime, a, err = searchIP6(c, s)
 		}
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			if len(a) > 0 {
 				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
 			} else {
 				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
+				res += printUpToDate(oldest)
 			}
 		}
 		if err != nil {
@@ -186,16 +210,22 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res += constructResult(a)
 		}
 	} else if isDomainName(domain) {
-		a, err = searchDomain(c, s)
+		utime, a, err = searchDomain(c, s)
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			if strings.HasPrefix(s, "www.") {
-				a2, err = searchDomain(c, s[4:])
+				utime, a2, err = searchDomain(c, s[4:])
 			} else {
-				a2, err = searchDomain(c, "www."+s)
+				utime, a2, err = searchDomain(c, "www."+s)
 			}
 
 		}
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			if len(a2) > 0 {
 				a = append(a, a2...)
 			}
@@ -204,8 +234,11 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			} else {
 				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
 				var ips4, ips6 []string
-				a, ips4, ips6, err = refSearch(c, s)
+				utime, a, ips4, ips6, err = refSearch(c, s)
 				if err == nil && len(a) > 0 {
+					if utime < oldest {
+						oldest = utime
+					}
 					res += fmt.Sprintf("\n\U0001f525 but may be filtered by IP:\n")
 					for _, ip := range ips4 {
 						res += fmt.Sprintf("    %s\n", ip)
@@ -213,8 +246,8 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 					for _, ip := range ips6 {
 						res += fmt.Sprintf("    %s\n", ip)
 					}
-					res += "\n"
 				}
+				res += printUpToDate(oldest)
 			}
 		}
 		if err != nil {
@@ -223,10 +256,14 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res += constructResult(a)
 		}
 	} else if _c != 0 {
-		a, err = searchID(c, s)
+		utime, a, err = searchID(c, s)
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			if len(a) == 0 {
 				res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
+				res += printUpToDate(oldest)
 			}
 		}
 		if err != nil {
@@ -237,8 +274,11 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 	} else if s[0] == '#' {
 		_, err = strconv.Atoi(s[1:])
 		if err == nil {
-			a, err = searchID(c, s[1:])
+			utime, a, err = searchID(c, s[1:])
 			if err == nil {
+				if utime < oldest {
+					oldest = utime
+				}
 				if len(a) == 0 {
 					res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
 				}
@@ -251,14 +291,20 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		}
 	} else if _ur == nil {
 		if _u.Scheme != "https" && _u.Scheme != "http" {
-			a, err = searchURL(c, s)
+			utime, a, err = searchURL(c, s)
 		} else {
 			_u.Scheme = "https"
-			a, err = searchURL(c, _u.String())
+			utime, a, err = searchURL(c, _u.String())
 			if err == nil {
+				if utime < oldest {
+					oldest = utime
+				}
 				_u.Scheme = "http"
-				a2, err = searchURL(c, _u.String())
+				utime, a2, err = searchURL(c, _u.String())
 				if err == nil {
+					if utime < oldest {
+						oldest = utime
+					}
 					if len(a2) > 0 {
 						a = append(a, a2...)
 					}
@@ -266,10 +312,14 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			}
 		}
 		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
 			if len(a) > 0 {
 				res = fmt.Sprintf("\U0001f525 URL %s *is blocked*\n\n", Sanitize(s))
 			} else {
 				res = fmt.Sprintf("\u2705 URL %s *is not blocked*\n", Sanitize(s))
+				res += printUpToDate(oldest)
 			}
 		}
 		if err != nil {
@@ -278,10 +328,16 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res += constructResult(a)
 		}
 	} else {
-		a, err = searchURL(c, s)
+		utime, a, err = searchURL(c, s)
 		if err == nil {
-			a2, err = searchDomain(c, s)
+			if utime < oldest {
+				oldest = utime
+			}
+			utime, a2, err = searchDomain(c, s)
 			if err == nil {
+				if utime < oldest {
+					oldest = utime
+				}
 				if len(a2) > 0 {
 					a = append(a, a2...)
 				}
@@ -295,6 +351,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				res += constructResult(a)
 			} else {
 				res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
+				res += printUpToDate(oldest)
 			}
 		}
 	}
