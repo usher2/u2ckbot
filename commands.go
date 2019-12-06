@@ -118,7 +118,9 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			sendMessage(bot, chat, inlineId, reply)
 		}
 	} else {
-		reply = mainSearch(c, text)
-		sendMessage(bot, chat, inlineId, reply)
+		if text[0] != '/' {
+			reply = mainSearch(c, text)
+			sendMessage(bot, chat, inlineId, reply)
+		}
 	}
 }
