@@ -22,12 +22,14 @@ type TypeConfig struct {
 }
 
 // connect to Telegram API
-func GetBot(token string) *tb.BotAPI {
+func GetBot(token, loglevel string) *tb.BotAPI {
 	bot, err := tb.NewBotAPI(token)
 	if err != nil {
 		log.Panic(err)
 	}
-	//bot.Debug = true
+	if loglevel == "Debug" {
+		bot.Debug = true
+	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	return bot
 }
@@ -73,24 +75,11 @@ func main() {
 	fmt.Printf("Connect...\n")
 	c := pb.NewCheckClient(conn)
 	// connect to Telegram API
-	Bot := GetBot(config.GetString("Token", ""))
+	bot := GetBot(config.GetString("Token", ""), logLevel)
 	// init Users cache
 	//ReadUsers(config.UserFile)
 	// init update chan
-	Updates := GetUpdatesChan(Bot)
+	updates := GetUpdatesChan(bot)
 	// read updates
-	for {
-		select {
-		case update := <-Updates:
-			if update.Message != nil { // ignore any non-Message Updates
-				if update.Message.Text != "" {
-					if update.Message.Chat.Type == "private" ||
-						(update.Message.ReplyToMessage == nil &&
-							update.Message.ForwardFromMessageID == 0) {
-						go Talks(c, Bot, update)
-					}
-				}
-			}
-		}
-	}
+	botUpdates(c, bot, updates)
 }

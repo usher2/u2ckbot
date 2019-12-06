@@ -13,7 +13,7 @@ import (
 )
 
 func searchID(c pb.CheckClient, id string) ([]*pb.Content, error) {
-	Debug.Printf("Looking for content: %s\n", id)
+	Info.Printf("Looking for content: %s\n", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	id32, _ := strconv.Atoi(id)
@@ -30,7 +30,7 @@ func searchID(c pb.CheckClient, id string) ([]*pb.Content, error) {
 }
 
 func searchIP4(c pb.CheckClient, ip string) ([]*pb.Content, error) {
-	Debug.Printf("Looking for %s\n", ip)
+	Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
@@ -46,7 +46,7 @@ func searchIP4(c pb.CheckClient, ip string) ([]*pb.Content, error) {
 }
 
 func searchIP6(c pb.CheckClient, ip string) ([]*pb.Content, error) {
-	Debug.Printf("Looking for %s\n", ip)
+	Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ip6 := net.ParseIP(ip)
@@ -70,7 +70,7 @@ func searchURL(c pb.CheckClient, u string) ([]*pb.Content, error) {
 	if _url != u {
 		fmt.Printf("Input was %s\n", u)
 	}
-	Debug.Printf("Looking for %s\n", _url)
+	Info.Printf("Looking for %s\n", _url)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
@@ -87,7 +87,7 @@ func searchURL(c pb.CheckClient, u string) ([]*pb.Content, error) {
 
 func searchDomain(c pb.CheckClient, s string) ([]*pb.Content, error) {
 	domain := NormalizeDomain(s)
-	Debug.Printf("Looking for %s\n", domain)
+	Info.Printf("Looking for %s\n", domain)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})

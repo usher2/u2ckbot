@@ -9,25 +9,80 @@ import (
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
-// Handle Chat message
-func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
-	// who writing
-	UserName := ""
-	if update.Message.From != nil {
-		UserName = update.Message.From.UserName
+func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel) {
+	for {
+		select {
+		case update := <-updatesChan:
+			if update.Message != nil { // ignore any non-Message Updates
+				if update.Message.Text != "" {
+					if update.Message.Chat.Type == "private" ||
+						(update.Message.ReplyToMessage == nil &&
+							update.Message.ForwardFromMessageID == 0) {
+						var uname string
+						// who writing
+						if update.Message.From != nil {
+							uname = update.Message.From.UserName
+						}
+						// chat/dialog
+						chat := update.Message.Chat
+						go Talks(c, bot, uname, chat, "", update.Message.Text)
+					}
+				}
+			} else if update.InlineQuery != nil {
+				if update.InlineQuery.Query != "" {
+					var uname string
+					// who writing
+					if update.Message.From != nil {
+						uname = update.Message.From.UserName
+					}
+					go Talks(c, bot, uname, nil, update.InlineQuery.ID, update.InlineQuery.Query)
+				}
+			}
+		}
 	}
-	// ID of chat/dialog
-	// maiby eq UserID or public chat
-	ChatID := update.Message.Chat.ID
-	bot.Send(tb.NewChatAction(ChatID, "typing"))
-	// message text
-	Text := update.Message.Text
+}
+
+func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
+	if chat != nil {
+		msg := tb.NewMessage(chat.ID, text+Footer)
+		msg.ParseMode = tb.ModeMarkdown
+		msg.DisableWebPagePreview = true
+		_, err := bot.Send(msg)
+		if err != nil {
+			Warning.Printf("Error sending message: %s\n", err.Error())
+		}
+	} else if inlineId != "" {
+		article := tb.InlineQueryResultArticle{
+			ID:    inlineId,
+			Title: "Search result",
+			Type:  "article",
+			InputMessageContent: tb.InputTextMessageContent{
+				Text:                  text + Footer,
+				ParseMode:             tb.ModeMarkdown,
+				DisableWebPagePreview: true,
+			},
+		}
+		inlineConf := tb.InlineConfig{
+			InlineQueryID: inlineId,
+			Results:       []interface{}{article},
+		}
+		if _, err := bot.AnswerInlineQuery(inlineConf); err != nil {
+			Warning.Printf("Error sending answer: %s\n", err.Error())
+		}
+	}
+}
+
+// Handle commands
+func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inlineId string, text string) {
+	var reply string
+	if chat != nil {
+		bot.Send(tb.NewChatAction(chat.ID, "typing"))
+	}
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
 	regex, _ := regexp.Compile(`^/([A-Za-z\_]+)\s*(.*)$`)
-	matches := regex.FindStringSubmatch(Text)
+	matches := regex.FindStringSubmatch(text)
 	// hanlde chat commands
 	if len(matches) > 0 {
-		var reply string
 		comm := matches[1]
 		commArgs := []string{""}
 		if len(matches) >= 3 {
@@ -47,28 +102,17 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, update tb.Update) {
 				reply = "😱 Noting to search\n"
 			}
 		case `start`:
-			reply = "Glad to see you, " + UserName + "!\n"
+			reply = "Glad to see you, " + uname + "!\n"
 		//case `ping`:
 		//	reply = Ping(c)
 		default:
 			reply = "😱 Unknown command\n"
 		}
 		if reply != `` {
-			msg := tb.NewMessage(ChatID, reply+Footer)
-			msg.ParseMode = tb.ModeMarkdown
-			msg.DisableWebPagePreview = true
-			_, err := bot.Send(msg)
-			if err != nil {
-				Warning.Printf("Error sending message: %s\n", err.Error())
-			}
+			sendMessage(bot, chat, inlineId, reply)
 		}
 	} else {
-		msg := tb.NewMessage(ChatID, mainSearch(c, Text)+Footer)
-		msg.ParseMode = tb.ModeMarkdown
-		msg.DisableWebPagePreview = true
-		_, err := bot.Send(msg)
-		if err != nil {
-			Warning.Printf("Error sending message: %s\n", err.Error())
-		}
+		reply = mainSearch(c, text)
+		sendMessage(bot, chat, inlineId, reply)
 	}
 }
