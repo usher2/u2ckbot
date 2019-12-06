@@ -246,8 +246,9 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 					for _, ip := range ips6 {
 						res += fmt.Sprintf("    %s\n", ip)
 					}
+				} else {
+					res += printUpToDate(oldest)
 				}
-				res += printUpToDate(oldest)
 			}
 		}
 		if err != nil {
