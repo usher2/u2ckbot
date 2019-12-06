@@ -267,9 +267,9 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		}
 		if err == nil {
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 URL %s *is blocked*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 URL %s *is not blocked*\n", Sanitize(s))
 			}
 		}
 		if err != nil {
@@ -286,14 +286,16 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 					a = append(a, a2...)
 				}
 			}
+		}
+		if err != nil {
+			res = err.Error() + "\n"
+		} else {
 			if len(a) > 0 {
+				res = fmt.Sprintf("\U0001f525 URL %s *is blocked*\n\n", Sanitize(s))
 				res += constructResult(a)
 			} else {
 				res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
 			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
 		}
 	}
 	return

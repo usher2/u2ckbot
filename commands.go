@@ -103,7 +103,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			reply = DonateMessage
 		case `n_`, `ck`, `check`:
 			if len(commArgs) > 0 {
-				reply = mainSearch(c, commArgs[len(commArgs)-1])
+				reply = mainSearch(c, commArgs[1])
 			} else {
 				reply = "😱 Noting to search\n"
 			}
