@@ -32,8 +32,8 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 				if update.InlineQuery.Query != "" {
 					var uname string
 					// who writing
-					if update.Message.From != nil {
-						uname = update.Message.From.UserName
+					if update.InlineQuery.From != nil {
+						uname = update.InlineQuery.From.UserName
 					}
 					go Talks(c, bot, uname, nil, update.InlineQuery.ID, update.InlineQuery.Query)
 				}
