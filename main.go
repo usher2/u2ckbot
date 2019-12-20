@@ -14,6 +14,8 @@ import (
 	"google.golang.org/grpc"
 )
 
+const MAXMSGSIZE = 1024 * 1024 * 128
+
 type TypeConfig struct {
 	// Config
 	Token         string
@@ -66,6 +68,7 @@ func main() {
 	//gRPC
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
+	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MAXMSGSIZE)))
 	//opts = append(opts, grpc.WithBlock())
 	conn, err := grpc.Dial(config.GetString("CkDumpServer", "localhost:50001"), opts...)
 	if err != nil {
