@@ -11,6 +11,15 @@ import (
 const ATTEMPTS = 1
 const TIMEOUT = 5
 
+func appendIfMissing(slice []string, s string) []string {
+	for _, ele := range slice {
+		if ele == s {
+			return slice
+		}
+	}
+	return append(slice, s)
+}
+
 func getIP4(domain string) (res []string) {
 	if r, _, err := GetRR(domain, []string{"127.0.0.11:53"}, dns.TypeA); err == nil {
 		switch r.Rcode {
@@ -26,12 +35,12 @@ func getIP4(domain string) (res []string) {
 						if cnt > 8 {
 							continue
 						}
-						res = append(res, rr.(*dns.A).A.String())
+						res = appendIfMissing(res, rr.(*dns.A).A.String())
 						cnt++
 					case dns.TypeCNAME:
 						res1 := getIP4(strings.TrimSuffix(rr.(*dns.CNAME).Target, "."))
-						if len(res1) > 0 {
-							res = append(res, res1...)
+						for _, ele := range res1 {
+							res = appendIfMissing(res, ele)
 						}
 					case dns.TypeRRSIG:
 						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
@@ -44,6 +53,7 @@ func getIP4(domain string) (res []string) {
 	} else {
 		Error.Printf("Type A. Internal error (%s): %s\n", domain, err.Error())
 	}
+
 	return
 }
 
@@ -62,12 +72,12 @@ func getIP6(domain string) (res []string) {
 						if cnt > 8 {
 							continue
 						}
-						res = append(res, rr.(*dns.AAAA).AAAA.String())
+						res = appendIfMissing(res, rr.(*dns.AAAA).AAAA.String())
 						cnt++
 					case dns.TypeCNAME:
 						res1 := getIP6(strings.TrimSuffix(rr.(*dns.CNAME).Target, "."))
-						if len(res1) > 0 {
-							res = append(res, res1...)
+						for _, ele := range res1 {
+							res = appendIfMissing(res, ele)
 						}
 					case dns.TypeRRSIG:
 						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
