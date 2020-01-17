@@ -4,7 +4,7 @@ const (
 	HelpMessage string = "*Commands:*\n" +
 		"/help - This message\n" +
 		"/helpru - руководство на русском\n" +
-		"/ck\n/check - check something - IP-address or Domain or URL\n\n" +
+		"/ck <website or IP>\n/check <website or IP> - check something - IP-address or Domain or URL\n\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
 		"Send a record ID (ussualy started with #) to the bot for details\n\n" +
@@ -19,7 +19,7 @@ const (
 	HelpMessageRu string = "*Команды:*\n" +
 		"/help - manual in english\n" +
 		"/helpru - это сообщение\n" +
-		"/ck\n/check - проверить IP адрес, домен или URL\n\n" +
+		"/ck <САЙТ или IP-адрес>\n/check <САЙТ или IP-адрес> - проверить IP адрес, домен или URL\n\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
 		"Отправьте ID записи (обозначена '#' в ответах) боту для получения подробностей\n" +
@@ -52,7 +52,9 @@ const (
 		"\U00002708 *Бонусные программы:*\n" +
 		"Аэрофлот-бонус: 1045433852\n" +
 		"S7-бонус: 929102200\n\n" +
-		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n"
+		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n" +
+		"\U00002708 *Игрушки:*\n" +
+		"World of Warships: Phil_Kulin\n"
 
 	Footer string = "--- \n" +
 		"Part of the @usher2 project\n\n" /*+
@@ -60,4 +62,7 @@ const (
 		"Сейчас весь краудфайндинг в 0 уходит на оплату " +
 		"хостинга проектов Эшер II - сайт, сбор выгрузок, бот этот. " +
 		"Даже писать посты стало решительно некогда. /donate \n" */
+
+	DonateFooter string = "Для дальнейшей поддержки и разработки бота и его окружения" +
+		"требуется финансовая поддержка. /dobnate"
 )
