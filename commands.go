@@ -50,6 +50,9 @@ const NO_AD_NUMBER = 20
 func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
 	if noAdCount >= NO_AD_NUMBER {
 		text += DonateFooter
+		noAdCount = 0
+	} else {
+		noAdCount += 1
 	}
 	if chat != nil {
 		msg := tb.NewMessage(chat.ID, text+Footer)
