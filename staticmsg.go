@@ -52,9 +52,9 @@ const (
 		"\U00002708 *Бонусные программы:*\n" +
 		"Аэрофлот-бонус: 1045433852\n" +
 		"S7-бонус: 929102200\n\n" +
-		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n" +
+		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n\n" +
 		"\U00002708 *Игрушки:*\n" +
-		"World of Warships: Phil_Kulin\n"
+		"World of Warships: Phil\\_Kulin\n"
 
 	Footer string = "--- \n" +
 		"Part of the @usher2 project\n\n" /*+
