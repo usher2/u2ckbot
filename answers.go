@@ -47,27 +47,27 @@ func printUpToDate(t int64) string {
 	default:
 		r = 0x2705
 	}
-	return fmt.Sprintf("\n%c _The data was synced not earlier than:_ %s\n", r, time.Unix(t, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+	return fmt.Sprintf("\n%c _Данные синхронизированы:_ %s\n", r, time.Unix(t, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 }
 
 func constructBasis(content *TContent) (res string) {
-	basis := "[статья 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая"
+	basis := "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая"
 	if content.EntryType == 1 && content.Decision.Org == "Генпрокуратура" {
-		basis = "[статья 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение"
+		basis = "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение"
 	} else if content.EntryType == 2 {
-		basis = "[статья 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание"
+		basis = "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание"
 	} else if content.EntryType == 3 {
-		basis = "[статья 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки"
+		basis = "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки"
 	} else if content.EntryType == 4 {
-		basis = "[статья 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ"
+		basis = "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ"
 	} else if content.EntryType == 5 && content.Decision.Org == "Мосгорсуд" {
-		basis = "[статьи 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечно"
+		basis = "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная"
 	} else if content.EntryType == 5 && content.Decision.Org == "Минкомсвязь" {
-		basis = "[статьи 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечно"
+		basis = "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная"
 	} else if content.EntryType == 6 {
-		basis = "[статьи 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), ПД"
+		basis = "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), ПД"
 	} else if content.EntryType == 7 {
-		basis = "[статьи 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN"
+		basis = "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN"
 	}
 	return basis
 }
@@ -82,7 +82,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Oooops!!! %s\n", err)
+			Error.Printf("Упс!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -90,7 +90,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 		}
 		Debug.Printf("%v\n", content)
 		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
-			mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Decision for mass blocking!\n\n"
+			mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Решение о «ковровой» блокировке!\n\n"
 		}
 		bt := ""
 		switch packet.BlockType {
@@ -108,48 +108,78 @@ func constructContentResult(a []*pb.Content) (res string) {
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 		basis := constructBasis(&content)
 		res += fmt.Sprintf("%s /n\\_%d %s (%s)\n", bt, content.Id, dcs, basis)
-		res += fmt.Sprintf("included: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 		for i, d := range content.Domain {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other domains\n", len(content.Domain)-i)
+				if len(content.Domain)-i == 1 {
+					res += fmt.Sprintf("... и ещё %d домен\n", len(content.Domain)-i)
+				} else if len(content.Domain)-i > 1 && len(content.Domain)-i < 5 {
+					res += fmt.Sprintf("... и %d домена\n", len(content.Domain)-i)
+				} else {
+					res += fmt.Sprintf("... и %d доменов\n", len(content.Domain)-i)
+				}
 				break
 			}
 			res += fmt.Sprintf("  domain: %s\n", Sanitize(d.Domain))
 		}
 		for i, u := range content.Url {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other urls\n", len(content.Url)-i)
+				res += fmt.Sprintf("... и ещё %d URL\n", len(content.Url)-i)
 				break
 			}
 			res += fmt.Sprintf("  url: %s\n", Sanitize(u.Url))
 		}
 		for i, ip := range content.Ip4 {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other ips\n", len(content.Ip4)-i)
+				if len(content.Ip4)-i == 1 {
+					res += fmt.Sprintf("... и %d IP-адрес\n", len(content.Ip4)-i)
+				} else if len(content.Ip4)-i > 1 && len(content.Ip4)-i < 5 {
+					res += fmt.Sprintf("... и ещё %d IP-адреса\n", len(content.Ip4)-i)
+				} else {
+					res += fmt.Sprintf("... и ещё %d IP-адресов\n", len(content.Ip4)-i)
+				}
 				break
 			}
 			res += fmt.Sprintf("  IP: %s\n", int2Ip4(ip.Ip4))
 		}
 		for i, ip := range content.Ip6 {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other ips\n", len(content.Ip6)-i)
+				if len(content.Ip6)-i == 1 {
+					res += fmt.Sprintf("... и %d IP-адрес\n", len(content.Ip6)-i)
+				} else if len(content.Ip6)-i > 1 && len(content.Ip6)-i < 5 {
+					res += fmt.Sprintf("... и ещё %d IP-адреса\n", len(content.Ip6)-i)
+				} else {
+					res += fmt.Sprintf("... и ещё %d IP-адресов\n", len(content.Ip6)-i)
+				}
 				break
 			}
 			res += fmt.Sprintf("  IP: %s\n", net.IP(ip.Ip6).String())
 		}
 		for i, sb := range content.Subnet4 {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other subnets\n", len(content.Subnet4)-i)
+				if len(content.Subnet4)-i == 1 {
+					res += fmt.Sprintf("... и %d подсеть\n", len(content.Subnet4)-i)
+				} else if len(content.Subnet4)-i > 1 && len(content.Subnet4)-i < 5 {
+					res += fmt.Sprintf("... и ещё %d подсети\n", len(content.Subnet4)-i)
+				} else {
+					res += fmt.Sprintf("... и ещё %d подсетей\n", len(content.Subnet4)-i)
+				}
 				break
 			}
-			res += fmt.Sprintf("  Subnet: %s\n", sb.Subnet4)
+			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet4)
 		}
 		for i, sb := range content.Subnet6 {
 			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... and %d other subnets\n", len(content.Subnet6)-i)
+				if len(content.Subnet6)-i == 1 {
+					res += fmt.Sprintf("... и %d подсеть\n", len(content.Subnet6)-i)
+				} else if len(content.Subnet6)-i > 1 && len(content.Subnet6)-i < 5 {
+					res += fmt.Sprintf("... и ещё %d подсети\n", len(content.Subnet6)-i)
+				} else {
+					res += fmt.Sprintf("... и ещё %d подсетей\n", len(content.Subnet6)-i)
+				}
 				break
 			}
-			res += fmt.Sprintf("  Subnet: %s\n", sb.Subnet6)
+			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet6)
 		}
 		break
 	}
@@ -257,7 +287,7 @@ func constructResult(a []*pb.Content) (res string) {
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Oooops!!! %s\n", err)
+			Error.Printf("Упс!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -271,7 +301,7 @@ func constructResult(a []*pb.Content) (res string) {
 		}
 		if len(req.Aggr) != 0 {
 			if packet.BlockType == TBLOCK_IP {
-				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Mass blocked resource!\n\n"
+				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Ресурс под «ковровой» блокировкой!!\n\n"
 			}
 		}
 		if cnt < PRINT_LIMIT {
@@ -298,22 +328,22 @@ func constructResult(a []*pb.Content) (res string) {
 			res += fmt.Sprintf("%s /n\\_%d %s (%s)\n", bt, content.Id, dcs, basis)
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
-					res += fmt.Sprintf("    _as subnet_ %s\n", nw)
+					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
 				}
 			}
 			if len(req.Ip) != 0 {
 				for _, ip := range req.Ip {
-					res += fmt.Sprintf("    _as ip_ %s\n", ip)
+					res += fmt.Sprintf("    _как ip_ %s\n", ip)
 				}
 			}
 			if len(req.Domain) != 0 {
 				for _, domain := range req.Domain {
-					res += fmt.Sprintf("    _as domain_ %s\n", Sanitize(PrintedDomain(domain)))
+					res += fmt.Sprintf("    _как domain_ %s\n", Sanitize(PrintedDomain(domain)))
 				}
 			}
 			if len(req.Url) != 0 {
 				for _, u := range req.Url {
-					res += fmt.Sprintf("    _as url_ %s\n", Sanitize(PrintedDomain(u)))
+					res += fmt.Sprintf("    _как url_ %s\n", Sanitize(PrintedDomain(u)))
 				}
 			}
 			res += "\n"
@@ -325,7 +355,7 @@ func constructResult(a []*pb.Content) (res string) {
 	}
 	if cnt > PRINT_LIMIT {
 		rest := cnt - PRINT_LIMIT
-		res += fmt.Sprintf("\U000026f0 ... and %d others\n", rest)
+		res += fmt.Sprintf("\U000026f0 ... и ещё %d\n", rest)
 		/*if cbu > 0 && cbu < rest {
 			res += fmt.Sprintf(" url=%d", cbu)
 		} else if cbu > 0 {
@@ -367,7 +397,7 @@ func constructResult(a []*pb.Content) (res string) {
 	if cbi > 0 {
 		abt = append(abt, "ip: \u274c")
 	}
-	res += "*blocking types:* " + strings.Join(abt, " | ")
+	res += "*типы блокировки:* " + strings.Join(abt, " | ")
 	res += printUpToDate(oldest)
 	return
 }

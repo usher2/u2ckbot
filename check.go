@@ -20,11 +20,11 @@ func searchID(c pb.CheckClient, id string) (int64, []*pb.Content, error) {
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id32)})
 	if err != nil {
 		Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
@@ -36,7 +36,7 @@ func searchIP4(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
 	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
 	if err != nil {
 		Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
@@ -51,16 +51,16 @@ func searchIP6(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
 	defer cancel()
 	ip6 := net.ParseIP(ip)
 	if len(ip6) == 0 {
-		return MAX_TIMESTAMP, nil, fmt.Errorf("Can't parse IP: %s\n", ip)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("Не могу разобрать IP-адрес: %s\n", ip)
 	}
 	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip6})
 	if err != nil {
 		Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
@@ -76,11 +76,11 @@ func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, error) {
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
@@ -93,11 +93,11 @@ func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
 		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Something wrong! Try again later\n")
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
@@ -152,7 +152,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		utime  int64
 	)
 	if len(s) == 0 {
-		res = fmt.Sprintf("\U0001f914 What did you mean?..\n")
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
 		return
 	}
 	domain := NormalizeDomain(s)
@@ -198,9 +198,9 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				oldest = utime
 			}
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 %s *не заблокрован*\n", Sanitize(s))
 				res += printUpToDate(oldest)
 			}
 		}
@@ -230,16 +230,16 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				a = append(a, a2...)
 			}
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *is blocked*\n\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 %s *is not blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
 				var ips4, ips6 []string
 				utime, a, ips4, ips6, err = refSearch(c, s)
 				if err == nil && len(a) > 0 {
 					if utime < oldest {
 						oldest = utime
 					}
-					res += fmt.Sprintf("\n\U0001f525 but may be filtered by IP:\n")
+					res += fmt.Sprintf("\n\U0001f525 но может быть ограничен по IP-адресу:\n")
 					for _, ip := range ips4 {
 						res += fmt.Sprintf("    %s\n", ip)
 					}
@@ -263,7 +263,7 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				oldest = utime
 			}
 			if len(a) == 0 {
-				res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
+				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
 				res += printUpToDate(oldest)
 			}
 		}
@@ -281,12 +281,12 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 					oldest = utime
 				}
 				if len(a) == 0 {
-					res = fmt.Sprintf("\U0001f914 %s *is not found*\n", s)
+					res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
 				}
 			}
 		}
 		if err != nil {
-			res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
+			res = fmt.Sprintf("\U0001f914 Что имеловсь ввиду?.. %s\n", s)
 		} else {
 			res += constructContentResult(a)
 		}
@@ -317,9 +317,9 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 				oldest = utime
 			}
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 URL %s *is blocked*\n\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 URL %s *is not blocked*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 URL %s *не заблокирован*\n", Sanitize(s))
 				res += printUpToDate(oldest)
 			}
 		}
@@ -348,10 +348,10 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 			res = err.Error() + "\n"
 		} else {
 			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 URL %s *is blocked*\n\n", Sanitize(s))
+				res = fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n", Sanitize(s))
 				res += constructResult(a)
 			} else {
-				res = fmt.Sprintf("\U0001f914 What did you mean?.. %s\n", s)
+				res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
 				res += printUpToDate(oldest)
 			}
 		}

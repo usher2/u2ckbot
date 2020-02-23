@@ -1,9 +1,9 @@
 package main
 
 const (
-	HelpMessage string = "*Commands:*\n" +
-		"/help - This message\n" +
-		"/helpru - руководство на русском\n" +
+	HelpMessageEn string = "*Commands:*\n" +
+		"/helpen - This message\n" +
+		"/help - руководство на русском\n" +
 		"/ck <website or IP>\n/check <website or IP> - check something - IP-address or Domain or URL\n\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
@@ -16,9 +16,9 @@ const (
 		"\U0001f506 Wildcard blockig type. It's similar to domain blocking type but providers MUST block domain name with wildcard name\n" +
 		"\u274c IP blocking type. Providers MUST block whole IP-address or subnet\n"
 
-	HelpMessageRu string = "*Команды:*\n" +
-		"/help - manual in english\n" +
-		"/helpru - это сообщение\n" +
+	HelpMessage string = "*Команды:*\n" +
+		"/helpen - manual in english\n" +
+		"/help - это сообщение\n" +
 		"/ck <САЙТ или IP-адрес>\n/check <САЙТ или IP-адрес> - проверить IP адрес, домен или URL\n\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
@@ -57,7 +57,7 @@ const (
 		"World of Warships: Phil\\_Kulin\n"
 
 	Footer string = "--- \n" +
-		"Part of the @usher2 project\n\n" /*+
+		"Часть проекта @usher2\n\n" /*+
 		"\U000026a0 Я хочу тонко намекнуть на толстые обстоятельства. " +
 		"Сейчас весь краудфайндинг в 0 уходит на оплату " +
 		"хостинга проектов Эшер II - сайт, сбор выгрузок, бот этот. " +

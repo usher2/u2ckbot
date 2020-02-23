@@ -108,18 +108,18 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		switch comm {
 		case `help`:
 			reply = HelpMessage
-		case `helpru`:
-			reply = HelpMessageRu
+		case `helpen`:
+			reply = HelpMessageEn
 		case `donate`:
 			reply = DonateMessage
 		case `n_`, `ck`, `check`:
 			if len(commArgs) > 0 {
 				reply = mainSearch(c, commArgs[0])
 			} else {
-				reply = "😱 Noting to search\n"
+				reply = "😱Нечего искать\n"
 			}
 		case `start`:
-			reply = "Glad to see you, " + uname + "!\n"
+			reply = "Приветствую тебя, " + uname + "!\n"
 			//case `ping`:
 			//	reply = Ping(c)
 			//default:
