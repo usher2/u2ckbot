@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -21,11 +23,23 @@ type TypeConfig struct {
 	Token         string
 	UserFile      string
 	CkDumpService string
+	HTTPSProxyUrl string
 }
 
 // connect to Telegram API
-func GetBot(token, loglevel string) *tb.BotAPI {
-	bot, err := tb.NewBotAPI(token)
+func GetBot(token, proxyUrl, loglevel string) *tb.BotAPI {
+	var bot *tb.BotAPI
+	var err error
+	if proxyUrl != "" {
+		_proxyUrl, err := url.Parse(proxyUrl)
+		if err != nil {
+			log.Panic("Proxy url invalid")
+		}
+		client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(_proxyUrl)}}
+		bot, err = tb.NewBotAPIWithClient(token, client)
+	} else {
+		bot, err = tb.NewBotAPI(token)
+	}
 	if err != nil {
 		log.Panic(err)
 	}
@@ -78,7 +92,7 @@ func main() {
 	fmt.Printf("Connect...\n")
 	c := pb.NewCheckClient(conn)
 	// connect to Telegram API
-	bot := GetBot(config.GetString("Token", ""), logLevel)
+	bot := GetBot(config.GetString("Token", ""), config.GetString("Proxy", ""), logLevel)
 	// init update chan
 	updates := GetUpdatesChan(bot)
 	// read updates
