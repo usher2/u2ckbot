@@ -30,6 +30,18 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						go Talks(c, bot, uname, chat, "", update.Message.Text)
 					}
 				}
+			} else if update.CallbackQuery != nil {
+				var uname string
+				// who writing
+				if update.CallbackQuery.From != nil {
+					uname = update.CallbackQuery.From.UserName
+				}
+				// chat/dialog
+				var chat *tb.Chat
+				if update.CallbackQuery.Message != nil {
+					chat = update.CallbackQuery.Message.Chat
+				}
+				go Talks(c, bot, uname, chat, "", "test")
 			} else if update.InlineQuery != nil {
 				if update.InlineQuery.Query != "" {
 					var uname string

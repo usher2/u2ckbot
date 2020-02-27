@@ -347,7 +347,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 			res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
-			res += fmt.Sprintf("\U0001f4dc %s\n", constructBasis(&content))
+			res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
