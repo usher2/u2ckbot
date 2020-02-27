@@ -52,6 +52,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						}
 					}
 				}
+				go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
 				go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
 			} else if update.InlineQuery != nil {
 				if update.InlineQuery.Query != "" {
@@ -87,7 +88,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 				}
 				if pages[i].Count > 2*PRINT_LIMIT {
 					row = append(row,
-						tb.NewInlineKeyboardButtonData(fmt.Sprintf("<< %d", 1),
+						tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d  \u23ea", 1),
 							fmt.Sprintf("%d:%d", OFFSET_CONTENT, 0)),
 					)
 				}
@@ -96,11 +97,11 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 					_o = 0
 				}
 				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("< %d", _o/PRINT_LIMIT+1),
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d  \u23ee", _o/PRINT_LIMIT+1),
 						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
 				)
 				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("- %d -", o/PRINT_LIMIT+1),
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("\u2022  %d  \u2022", o/PRINT_LIMIT+1),
 						fmt.Sprintf("%d:%d", OFFSET_CONTENT, o)),
 				)
 				_o = o + PRINT_LIMIT
@@ -112,7 +113,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 				}
 				_p := _o/PRINT_LIMIT + 1
 				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >", _p),
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("\u23ed  %d", _p),
 						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
 				)
 				if pages[i].Count > 2*PRINT_LIMIT {
@@ -122,7 +123,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 					}
 					_p = _o/PRINT_LIMIT + 1
 					row = append(row,
-						tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >>", _p),
+						tb.NewInlineKeyboardButtonData(fmt.Sprintf("\u23e9  %d", _p),
 							fmt.Sprintf("%d:%d", OFFSET_CONTENT,
 								_o)),
 					)
