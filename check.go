@@ -201,7 +201,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			if len(a) > 0 {
 				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 %s *не заблокрован*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
 				res += printUpToDate(oldest)
 			}
 		}
