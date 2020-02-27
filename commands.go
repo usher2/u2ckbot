@@ -2,6 +2,7 @@
 package main
 
 import (
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -47,18 +48,78 @@ var noAdCount int = 0
 
 const NO_AD_NUMBER = 20
 
-func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
+func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMarkup {
+	var (
+		keyboard [][]tb.InlineKeyboardButton
+		o        int
+	)
+	for i, _ := range pages {
+		if pages[i].Tag == OFFSET_CONTENT {
+			if pages[i].Count > PRINT_LIMIT {
+				row := tb.NewInlineKeyboardRow()
+				if offset.Tag != OFFSET_CONTENT {
+					o = 0
+				} else {
+					o = offset.Count
+				}
+				if pages[i].Count > 2*PRINT_LIMIT {
+					row = append(row,
+						tb.NewInlineKeyboardButtonData(fmt.Sprintf("<< %d", 1),
+							fmt.Sprintf("%d:%d", OFFSET_CONTENT, 0)),
+					)
+				}
+				_o := o - PRINT_LIMIT
+				if _o < 0 {
+					_o = 0
+				}
+				row = append(row,
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("< %d", _o/PRINT_LIMIT+1),
+						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
+				)
+				row = append(row,
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("- %d -", o/PRINT_LIMIT+1),
+						fmt.Sprintf("%d:%d", OFFSET_CONTENT, o)),
+				)
+				_o = o + PRINT_LIMIT
+				if _o > pages[i].Count-(pages[i].Count%PRINT_LIMIT) {
+					_o = pages[i].Count - (pages[i].Count % PRINT_LIMIT)
+				}
+				row = append(row,
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >", _o/PRINT_LIMIT+1),
+						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
+				)
+				if pages[i].Count > 2*PRINT_LIMIT {
+					row = append(row,
+						tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >>", pages[i].Count/PRINT_LIMIT+1),
+							fmt.Sprintf("%d:%d", OFFSET_CONTENT,
+								pages[i].Count-(pages[i].Count%PRINT_LIMIT))),
+					)
+				}
+				keyboard = append(keyboard, row)
+			}
+		}
+	}
+	return tb.InlineKeyboardMarkup{
+		InlineKeyboard: keyboard,
+	}
+}
+
+func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string, offset TPagination, pages []TPagination) {
 	if chat != nil {
 		if noAdCount >= NO_AD_NUMBER {
-			text += Footer + DonateFooter
+			text += "--- \n" + DonateFooter
 			noAdCount = 0
 		} else {
-			text += Footer
+			//text += Footer
 			noAdCount += 1
 		}
 		msg := tb.NewMessage(chat.ID, text)
 		msg.ParseMode = tb.ModeMarkdown
 		msg.DisableWebPagePreview = true
+		inlineKeyboard := makePagination(offset, pages)
+		if len(inlineKeyboard.InlineKeyboard) > 0 {
+			msg.ReplyMarkup = inlineKeyboard
+		}
 		_, err := bot.Send(msg)
 		if err != nil {
 			Warning.Printf("Error sending message: %s\n", err.Error())
@@ -86,7 +147,10 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, text string) {
 
 // Handle commands
 func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inlineId string, text string) {
-	var reply string
+	var (
+		reply string
+		pages []TPagination
+	)
 	if chat != nil {
 		bot.Send(tb.NewChatAction(chat.ID, "typing"))
 	}
@@ -114,7 +178,8 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			reply = DonateMessage
 		case `n_`, `ck`, `check`:
 			if len(commArgs) > 0 {
-				reply = mainSearch(c, commArgs[0])
+				reply, pages = mainSearch(c, commArgs[0], TPagination{})
+				Debug.Printf("Pagination: %v\n", pages)
 			} else {
 				reply = "😱Нечего искать\n"
 			}
@@ -126,12 +191,13 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			//	reply = "😱 Unknown command\n"
 		}
 		if reply != "" {
-			sendMessage(bot, chat, inlineId, reply)
+			sendMessage(bot, chat, inlineId, reply, TPagination{}, pages)
 		}
 	} else {
 		if text[0] != '/' {
-			reply = mainSearch(c, text)
-			sendMessage(bot, chat, inlineId, reply)
+			reply, pages = mainSearch(c, text, TPagination{})
+			Debug.Printf("Pagination: %v\n", pages)
+			sendMessage(bot, chat, inlineId, reply, TPagination{}, pages)
 		}
 	}
 }

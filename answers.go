@@ -19,7 +19,7 @@ const (
 	TBLOCK_IP
 )
 
-const PRINT_LIMIT = 10
+const PRINT_LIMIT = 5
 
 const MAX_TIMESTAMP int64 = 1<<63 - 1
 
@@ -27,6 +27,15 @@ const (
 	DTIME12 = 12 * 60 * 60
 	DTIME3  = 3 * 60 * 60
 )
+
+const (
+	_ = iota
+	OFFSET_CONTENT
+)
+
+type TPagination struct {
+	Tag, Count int
+}
 
 type TReason struct {
 	Id     int32
@@ -192,7 +201,7 @@ func constructContentResult(a []*pb.Content) (res string) {
 	return
 }
 
-func constructResult(a []*pb.Content) (res string) {
+func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagination) {
 	var mass string
 	var oldest int64 = MAX_TIMESTAMP
 	var ra []TReason
@@ -282,8 +291,21 @@ func constructResult(a []*pb.Content) (res string) {
 			return false
 		}
 	})
+	offset := 0
+	if o.Tag == OFFSET_CONTENT {
+		if len(a) <= PRINT_LIMIT {
+			offset = 0
+		} else if o.Count > len(a)-(len(a)%PRINT_LIMIT) {
+			offset = len(a) - (len(a) % PRINT_LIMIT)
+		} else {
+			offset = o.Count
+		}
+	}
 	var cnt, cbu, cbh, cbd, cbm, cbi int
-	for _, packet := range a {
+	for i, packet := range a {
+		if o.Tag == OFFSET_CONTENT && i < offset {
+			continue
+		}
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
@@ -324,8 +346,8 @@ func constructResult(a []*pb.Content) (res string) {
 				cbi++
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-			basis := constructBasis(&content)
-			res += fmt.Sprintf("%s /n\\_%d %s (%s)\n", bt, content.Id, dcs, basis)
+			res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
+			res += fmt.Sprintf("\U0001f4dc %s\n", constructBasis(&content))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
@@ -354,8 +376,9 @@ func constructResult(a []*pb.Content) (res string) {
 		res = mass + res
 	}
 	if cnt > PRINT_LIMIT {
-		rest := cnt - PRINT_LIMIT
-		res += fmt.Sprintf("\U000026f0 ... и ещё %d\n", rest)
+		pages = append(pages, TPagination{OFFSET_CONTENT, len(a)})
+		//rest := cnt - PRINT_LIMIT
+		res += fmt.Sprintf("\u2194 результаты с %d по %d из %d\n", offset+1, offset+1+PRINT_LIMIT, len(a))
 		/*if cbu > 0 && cbu < rest {
 			res += fmt.Sprintf(" url=%d", cbu)
 		} else if cbu > 0 {

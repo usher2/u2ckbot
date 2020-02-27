@@ -144,12 +144,13 @@ func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []st
 	}
 }
 
-func mainSearch(c pb.CheckClient, s string) (res string) {
+func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
 	var (
 		err    error
 		a, a2  []*pb.Content
 		oldest int64 = MAX_TIMESTAMP
 		utime  int64
+		_res   string
 	)
 	if len(s) == 0 {
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
@@ -207,7 +208,8 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		if err != nil {
 			res = err.Error() + "\n"
 		} else {
-			res += constructResult(a)
+			_res, pages = constructResult(a, o)
+			res += _res
 		}
 	} else if isDomainName(domain) {
 		utime, a, err = searchDomain(c, s)
@@ -254,7 +256,8 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		if err != nil {
 			res = err.Error() + "\n"
 		} else {
-			res += constructResult(a)
+			_res, pages = constructResult(a, o)
+			res += _res
 		}
 	} else if _c != 0 {
 		utime, a, err = searchID(c, s)
@@ -326,7 +329,8 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		if err != nil {
 			res = err.Error() + "\n"
 		} else {
-			res += constructResult(a)
+			_res, pages = constructResult(a, o)
+			res += _res
 		}
 	} else {
 		utime, a, err = searchURL(c, s)
@@ -349,7 +353,8 @@ func mainSearch(c pb.CheckClient, s string) (res string) {
 		} else {
 			if len(a) > 0 {
 				res = fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n", Sanitize(s))
-				res += constructResult(a)
+				_res, pages = constructResult(a, o)
+				res += _res
 			} else {
 				res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
 				res += printUpToDate(oldest)
