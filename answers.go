@@ -375,10 +375,10 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 	if mass != "" {
 		res = mass + res
 	}
-	if cnt > PRINT_LIMIT {
+	if len(a) > PRINT_LIMIT {
 		pages = append(pages, TPagination{OFFSET_CONTENT, len(a)})
 		//rest := cnt - PRINT_LIMIT
-		res += fmt.Sprintf("\u2194 результаты с %d по %d из %d\n", offset+1, offset+1+PRINT_LIMIT, len(a))
+		res += fmt.Sprintf("\u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, len(a))
 		/*if cbu > 0 && cbu < rest {
 			res += fmt.Sprintf(" url=%d", cbu)
 		} else if cbu > 0 {
