@@ -31,6 +31,12 @@ const (
 const (
 	_ = iota
 	OFFSET_CONTENT
+	OFFSET_IP4
+	OFFSET_IP6
+	OFFSET_URL
+	OFFSET_SUBNET4
+	OFFSET_SUBNET6
+	OFFSET_DOMAIN
 )
 
 type TPagination struct {
@@ -81,8 +87,7 @@ func constructBasis(content *TContent) (res string) {
 	return basis
 }
 
-func constructContentResult(a []*pb.Content) (res string) {
-	var mass string
+func constructContentResult(a []*pb.Content, o TPagination) (res string, pages []TPagination) {
 	var oldest int64 = MAX_TIMESTAMP
 	if len(a) == 0 {
 		return
@@ -96,10 +101,6 @@ func constructContentResult(a []*pb.Content) (res string) {
 		}
 		if packet.RegistryUpdateTime < oldest {
 			oldest = packet.RegistryUpdateTime
-		}
-		Debug.Printf("%v\n", content)
-		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
-			mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Решение о «ковровой» блокировке!\n\n"
 		}
 		bt := ""
 		switch packet.BlockType {
@@ -115,87 +116,185 @@ func constructContentResult(a []*pb.Content) (res string) {
 			bt = "\u274c (ip) "
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-		basis := constructBasis(&content)
-		res += fmt.Sprintf("%s /n\\_%d %s (%s)\n", bt, content.Id, dcs, basis)
+		res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
+		res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
 		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
+			res += "\U0001f4a5\U0001f4a5\U0001f4a5 Решение о «ковровой» блокировке!\n"
+		}
+		res += "\n"
+		cnt := 0
 		for i, d := range content.Domain {
-			if i >= PRINT_LIMIT {
-				if len(content.Domain)-i == 1 {
-					res += fmt.Sprintf("... и ещё %d домен\n", len(content.Domain)-i)
-				} else if len(content.Domain)-i > 1 && len(content.Domain)-i < 5 {
-					res += fmt.Sprintf("... и %d домена\n", len(content.Domain)-i)
-				} else {
-					res += fmt.Sprintf("... и %d доменов\n", len(content.Domain)-i)
-				}
+			if o.Tag == OFFSET_DOMAIN && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  domain: %s\n", Sanitize(d.Domain))
+			cnt++
 		}
+		l := len(content.Domain)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_DOMAIN {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
+				} else {
+					offset = o.Count
+				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_DOMAIN, l})
+		}
+		if cnt > 0 {
+			res += "\n"
+		}
+		cnt = 0
 		for i, u := range content.Url {
-			if i >= PRINT_LIMIT {
-				res += fmt.Sprintf("... и ещё %d URL\n", len(content.Url)-i)
+			if o.Tag == OFFSET_URL && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  url: %s\n", Sanitize(u.Url))
+			cnt++
 		}
-		for i, ip := range content.Ip4 {
-			if i >= PRINT_LIMIT {
-				if len(content.Ip4)-i == 1 {
-					res += fmt.Sprintf("... и %d IP-адрес\n", len(content.Ip4)-i)
-				} else if len(content.Ip4)-i > 1 && len(content.Ip4)-i < 5 {
-					res += fmt.Sprintf("... и ещё %d IP-адреса\n", len(content.Ip4)-i)
+		l = len(content.Url)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_URL {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
 				} else {
-					res += fmt.Sprintf("... и ещё %d IP-адресов\n", len(content.Ip4)-i)
+					offset = o.Count
 				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_URL, l})
+		}
+		if cnt > 0 {
+			res += "\n"
+		}
+		cnt = 0
+		for i, ip := range content.Ip4 {
+			if o.Tag == OFFSET_IP4 && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  IP: %s\n", int2Ip4(ip.Ip4))
+			cnt++
 		}
-		for i, ip := range content.Ip6 {
-			if i >= PRINT_LIMIT {
-				if len(content.Ip6)-i == 1 {
-					res += fmt.Sprintf("... и %d IP-адрес\n", len(content.Ip6)-i)
-				} else if len(content.Ip6)-i > 1 && len(content.Ip6)-i < 5 {
-					res += fmt.Sprintf("... и ещё %d IP-адреса\n", len(content.Ip6)-i)
+		l = len(content.Ip4)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_IP4 {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
 				} else {
-					res += fmt.Sprintf("... и ещё %d IP-адресов\n", len(content.Ip6)-i)
+					offset = o.Count
 				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_IP4, l})
+		}
+		if cnt > 0 {
+			res += "\n"
+		}
+		cnt = 0
+		for i, ip := range content.Ip6 {
+			if o.Tag == OFFSET_IP6 && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  IP: %s\n", net.IP(ip.Ip6).String())
+			cnt++
 		}
-		for i, sb := range content.Subnet4 {
-			if i >= PRINT_LIMIT {
-				if len(content.Subnet4)-i == 1 {
-					res += fmt.Sprintf("... и %d подсеть\n", len(content.Subnet4)-i)
-				} else if len(content.Subnet4)-i > 1 && len(content.Subnet4)-i < 5 {
-					res += fmt.Sprintf("... и ещё %d подсети\n", len(content.Subnet4)-i)
+		l = len(content.Ip6)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_IP6 {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
 				} else {
-					res += fmt.Sprintf("... и ещё %d подсетей\n", len(content.Subnet4)-i)
+					offset = o.Count
 				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_IP6, l})
+		}
+		if cnt > 0 {
+			res += "\n"
+		}
+		cnt = 0
+		for i, sb := range content.Subnet4 {
+			if o.Tag == OFFSET_SUBNET4 && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet4)
+			cnt++
 		}
-		for i, sb := range content.Subnet6 {
-			if i >= PRINT_LIMIT {
-				if len(content.Subnet6)-i == 1 {
-					res += fmt.Sprintf("... и %d подсеть\n", len(content.Subnet6)-i)
-				} else if len(content.Subnet6)-i > 1 && len(content.Subnet6)-i < 5 {
-					res += fmt.Sprintf("... и ещё %d подсети\n", len(content.Subnet6)-i)
+		l = len(content.Subnet4)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_SUBNET4 {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
 				} else {
-					res += fmt.Sprintf("... и ещё %d подсетей\n", len(content.Subnet6)-i)
+					offset = o.Count
 				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_SUBNET4, l})
+		}
+		if cnt > 0 {
+			res += "\n"
+		}
+		cnt = 0
+		for i, sb := range content.Subnet6 {
+			if o.Tag == OFFSET_SUBNET6 && i <= o.Count {
+				continue
+			}
+			if cnt >= PRINT_LIMIT {
 				break
 			}
 			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet6)
+			cnt++
+		}
+		l = len(content.Subnet6)
+		if l > PRINT_LIMIT {
+			offset := 0
+			if o.Tag == OFFSET_SUBNET6 {
+				if l <= PRINT_LIMIT {
+					offset = 0
+				} else if o.Count > l-(l%PRINT_LIMIT) {
+					offset = l - (l % PRINT_LIMIT)
+				} else {
+					offset = o.Count
+				}
+			}
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			pages = append(pages, TPagination{OFFSET_SUBNET6, l})
 		}
 		break
-	}
-	if mass == "" {
-		res = "\n" + res
-	} else {
-		res = mass + res
 	}
 	res += printUpToDate(oldest)
 	return
