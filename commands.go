@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -49,9 +50,16 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
 							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован") {
 							req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
+						} else if strings.Index(update.CallbackQuery.Message.Text[:i], "/n_") != -1 {
+							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
+							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+							if j2 != -1 {
+								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+							}
 						}
 					}
 				}
+				go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
 				go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
 			} else if update.InlineQuery != nil {
 				if update.InlineQuery.Query != "" {
@@ -75,60 +83,92 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 	var (
 		keyboard [][]tb.InlineKeyboardButton
 		o        int
+		pict     string
 	)
+	sort.Slice(pages, func(i, j int) bool {
+		return pages[i].Tag < pages[j].Tag
+	})
 	for i, _ := range pages {
-		if pages[i].Tag == OFFSET_CONTENT {
-			if pages[i].Count > PRINT_LIMIT {
-				row := tb.NewInlineKeyboardRow()
-				if offset.Tag != OFFSET_CONTENT {
-					o = 0
-				} else {
-					o = offset.Count
-				}
-				if pages[i].Count > 2*PRINT_LIMIT {
-					row = append(row,
-						tb.NewInlineKeyboardButtonData(fmt.Sprintf("<< %d", 1),
-							fmt.Sprintf("%d:%d", OFFSET_CONTENT, 0)),
-					)
-				}
-				_o := o - PRINT_LIMIT
-				if _o < 0 {
-					_o = 0
+		curTag := pages[i].Tag
+		if pages[i].Count > PRINT_LIMIT {
+			row := tb.NewInlineKeyboardRow()
+			if offset.Tag != curTag {
+				o = 0
+			} else {
+				o = offset.Count
+			}
+			slug := strconv.Itoa(o/PRINT_LIMIT + 1)
+			if curTag == OFFSET_DOMAIN {
+				slug = "домен"
+			} else if curTag == OFFSET_URL {
+				slug = "URL"
+			} else if curTag == OFFSET_IP4 {
+				slug = "IPv4"
+			} else if curTag == OFFSET_IP6 {
+				slug = "IPv6"
+			} else if curTag == OFFSET_SUBNET4 {
+				slug = "подсеть v4"
+			} else if curTag == OFFSET_SUBNET6 {
+				slug = "подсеть v6"
+			}
+			if pages[i].Count > 2*PRINT_LIMIT {
+				pict = "\u23ea"
+				if o == 0 {
+					pict = "\U000023f9"
 				}
 				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("< %d", _o/PRINT_LIMIT+1),
-						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d  %s", 1, pict),
+						fmt.Sprintf("%d:%d", curTag, 0)),
 				)
-				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("- %d -", o/PRINT_LIMIT+1),
-						fmt.Sprintf("%d:%d", OFFSET_CONTENT, o)),
-				)
-				_o = o + PRINT_LIMIT
-				if _o > pages[i].Count-(pages[i].Count%PRINT_LIMIT) {
-					_o = pages[i].Count - (pages[i].Count % PRINT_LIMIT)
-				}
+			}
+			_o := o - PRINT_LIMIT
+			if _o < 0 {
+				_o = 0
+			}
+			pict = "\u23ee"
+			if o == 0 {
+				pict = "\U000023f9"
+			}
+			row = append(row,
+				tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d  %s", _o/PRINT_LIMIT+1, pict),
+					fmt.Sprintf("%d:%d", curTag, _o)),
+			)
+			row = append(row,
+				tb.NewInlineKeyboardButtonData(fmt.Sprintf("\u2022  %s  \u2022", slug),
+					fmt.Sprintf("%d:%d", curTag, o)),
+			)
+			_o = o + PRINT_LIMIT
+			if _o > pages[i].Count-(pages[i].Count%PRINT_LIMIT) {
+				_o = pages[i].Count - (pages[i].Count % PRINT_LIMIT)
+			}
+			if _o == pages[i].Count {
+				_o -= PRINT_LIMIT
+			}
+			pict = "\u23ed"
+			if o >= _o {
+				pict = "\U000023f9"
+			}
+			_p := _o/PRINT_LIMIT + 1
+			row = append(row,
+				tb.NewInlineKeyboardButtonData(fmt.Sprintf("%s  %d", pict, _p),
+					fmt.Sprintf("%d:%d", curTag, _o)),
+			)
+			if pages[i].Count > 2*PRINT_LIMIT {
+				_o = pages[i].Count - (pages[i].Count % PRINT_LIMIT)
 				if _o == pages[i].Count {
 					_o -= PRINT_LIMIT
 				}
-				_p := _o/PRINT_LIMIT + 1
-				row = append(row,
-					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >", _p),
-						fmt.Sprintf("%d:%d", OFFSET_CONTENT, _o)),
-				)
-				if pages[i].Count > 2*PRINT_LIMIT {
-					_o = pages[i].Count - (pages[i].Count % PRINT_LIMIT)
-					if _o == pages[i].Count {
-						_o -= PRINT_LIMIT
-					}
-					_p = _o/PRINT_LIMIT + 1
-					row = append(row,
-						tb.NewInlineKeyboardButtonData(fmt.Sprintf("%d >>", _p),
-							fmt.Sprintf("%d:%d", OFFSET_CONTENT,
-								_o)),
-					)
+				_p = _o/PRINT_LIMIT + 1
+				pict = "\u23e9"
+				if o >= _o {
+					pict = "\U000023f9"
 				}
-				keyboard = append(keyboard, row)
+				row = append(row,
+					tb.NewInlineKeyboardButtonData(fmt.Sprintf("%s  %d", pict, _p),
+						fmt.Sprintf("%d:%d", curTag, _o)),
+				)
 			}
+			keyboard = append(keyboard, row)
 		}
 	}
 	return tb.InlineKeyboardMarkup{
@@ -206,9 +246,9 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			Debug.Println("!!!!!!!", callbackData, offset)
 		}
 	}
-	if chat != nil {
-		bot.Send(tb.NewChatAction(chat.ID, "typing"))
-	}
+	//if chat != nil {
+	//	bot.Send(tb.NewChatAction(chat.ID, "typing"))
+	//}
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
 	regex, _ := regexp.Compile(`^/([A-Za-z\_]+)\s*(.*)$`)
 	matches := regex.FindStringSubmatch(text)
@@ -256,4 +296,5 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
 		}
 	}
+	Debug.Println(pages)
 }

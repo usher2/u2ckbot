@@ -201,7 +201,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			if len(a) > 0 {
 				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
 			} else {
-				res = fmt.Sprintf("\u2705 %s *не заблокрован*\n", Sanitize(s))
+				res = fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
 				res += printUpToDate(oldest)
 			}
 		}
@@ -273,7 +273,8 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 		if err != nil {
 			res = err.Error() + "\n"
 		} else {
-			res += constructContentResult(a)
+			_res, pages = constructContentResult(a, o)
+			res += _res
 		}
 	} else if s[0] == '#' {
 		_, err = strconv.Atoi(s[1:])
@@ -291,7 +292,8 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 		if err != nil {
 			res = fmt.Sprintf("\U0001f914 Что имеловсь ввиду?.. %s\n", s)
 		} else {
-			res += constructContentResult(a)
+			_res, pages = constructContentResult(a, o)
+			res += _res
 		}
 	} else if _ur == nil {
 		if _u.Scheme != "https" && _u.Scheme != "http" {
