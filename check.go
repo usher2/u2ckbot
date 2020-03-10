@@ -92,7 +92,24 @@ func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
 	defer cancel()
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
-		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
+		Debug.Printf("%v.SearchDomain(_) = _, %v\n", c, err)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+	}
+	if r.Error != "" {
+		Debug.Printf("ERROR: %s\n", r.Error)
+		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+	}
+	return r.RegistryUpdateTime, r.Results[:], nil
+}
+
+func searchDecision(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
+	Info.Printf("Looking for &%s\n", s)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+	decision, _ := strconv.ParseUint(s, 10, 64)
+	r, err := c.SearchDecision(ctx, &pb.DecisionRequest{Query: decision})
+	if err != nil {
+		Debug.Printf("%v.SearchDecision(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
@@ -144,6 +161,78 @@ func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []st
 	}
 }
 
+func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
+	var (
+		a      []*pb.Content
+		oldest int64 = MAX_TIMESTAMP
+		utime  int64
+		_res   string
+	)
+	if len(s) == 0 {
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
+		return
+	}
+	if n, err := strconv.Atoi(s); err == nil && n != 0 {
+		utime, a, err = searchID(c, s)
+		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
+			if len(a) == 0 {
+				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
+				res += printUpToDate(oldest)
+			}
+		}
+		if err != nil {
+			res = err.Error() + "\n"
+		} else {
+			_res, pages = constructContentResult(a, o)
+			res += _res
+		}
+	} else if err != nil {
+		res = err.Error() + "\n"
+	} else {
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
+	}
+	return
+}
+
+func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
+	var (
+		a      []*pb.Content
+		oldest int64 = MAX_TIMESTAMP
+		utime  int64
+		_res   string
+	)
+	if len(s) == 0 {
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
+		return
+	}
+	if n, err := strconv.ParseUint(s, 10, 64); err == nil && n != 0 {
+		utime, a, err = searchDecision(c, s)
+		if err == nil {
+			if utime < oldest {
+				oldest = utime
+			}
+			if len(a) == 0 {
+				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
+				res += printUpToDate(oldest)
+			}
+		}
+		if err != nil {
+			res = err.Error() + "\n"
+		} else {
+			_res, pages = constructContentResult(a, o)
+			res += _res
+		}
+	} else if err != nil {
+		res = err.Error() + "\n"
+	} else {
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
+	}
+	return
+}
+
 func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
 	var (
 		err    error
@@ -173,7 +262,6 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 		_ur = fmt.Errorf("fake")
 	}
 	ip := net.ParseIP(s)
-	_c, _ := strconv.Atoi(s)
 	if ip != nil {
 		if ip.To4() != nil {
 			utime, a, err = searchIP4(c, s)
@@ -257,42 +345,6 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			res = err.Error() + "\n"
 		} else {
 			_res, pages = constructResult(a, o)
-			res += _res
-		}
-	} else if _c != 0 {
-		utime, a, err = searchID(c, s)
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			if len(a) == 0 {
-				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
-				res += printUpToDate(oldest)
-			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructContentResult(a, o)
-			res += _res
-		}
-	} else if s[0] == '#' {
-		_, err = strconv.Atoi(s[1:])
-		if err == nil {
-			utime, a, err = searchID(c, s[1:])
-			if err == nil {
-				if utime < oldest {
-					oldest = utime
-				}
-				if len(a) == 0 {
-					res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
-				}
-			}
-		}
-		if err != nil {
-			res = fmt.Sprintf("\U0001f914 Что имеловсь ввиду?.. %s\n", s)
-		} else {
-			_res, pages = constructContentResult(a, o)
 			res += _res
 		}
 	} else if _ur == nil {

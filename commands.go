@@ -250,7 +250,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 	//	bot.Send(tb.NewChatAction(chat.ID, "typing"))
 	//}
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
-	regex, _ := regexp.Compile(`^/([A-Za-z\_]+)\s*(.*)$`)
+	regex, _ := regexp.Compile(`^/([A-Za-z\_\#\&]+)\s*(.*)$`)
 	matches := regex.FindStringSubmatch(text)
 	// hanlde chat commands
 	if len(matches) > 0 {
@@ -271,9 +271,21 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			reply = HelpMessageEn
 		case `donate`:
 			reply = DonateMessage
-		case `n_`, `ck`, `check`:
+		case `ck`, `check`:
 			if len(commArgs) > 0 {
 				reply, pages = mainSearch(c, commArgs[0], offset)
+			} else {
+				reply = "😱Нечего искать\n"
+			}
+		case `n_`, `#`:
+			if len(commArgs) > 0 {
+				reply, pages = numberSearch(c, commArgs[0], offset)
+			} else {
+				reply = "😱Нечего искать\n"
+			}
+		case `d_`, `&`:
+			if len(commArgs) > 0 {
+				reply, pages = decisionSearch(c, commArgs[0], offset)
 			} else {
 				reply = "😱Нечего искать\n"
 			}

@@ -79,9 +79,9 @@ message Content {
         int64 registryUpdateTime = 2;
         int32 blockType = 3;
         uint32 ip4 = 4;
-        bytes ip6 = 5;
-        string domain = 6;
-        string decision = 7;
+        uint64 decision = 5;
+        bytes ip6 = 6;
+        string domain = 7;
         string url = 8;
         string aggr = 9;
         bytes pack = 10;
