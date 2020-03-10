@@ -38,11 +38,12 @@ type TPagination struct {
 }
 
 type TReason struct {
-	Id     int32
-	Aggr   []string
-	Ip     []string
-	Url    []string
-	Domain []string
+	Id       int32
+	Aggr     []string
+	Ip       []string
+	Url      []string
+	Domain   []string
+	Decision []string
 }
 
 func printUpToDate(t int64) string {
@@ -225,6 +226,9 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 	if a[0].Domain != "" {
 		ra[0].Domain = append(ra[0].Domain, PrintedDomain(a[0].Domain))
 	}
+	if a[0].Decision != "" {
+		ra[0].Decision = append(ra[0].Decision, a[0].Decision)
+	}
 	if a[0].Url != "" {
 		ra[0].Url = append(ra[0].Url, PrintedDomain(a[0].Url))
 	}
@@ -240,7 +244,10 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				ra[i].Ip = append(ra[i].Ip, net.IP(a[i+1].Ip6).String())
 			}
 			if a[i+1].Domain != "" {
-				ra[i].Domain = append(ra[i].Domain, a[i+1].Domain)
+				ra[i].Domain = append(ra[i].Domain, PrintedDomain(a[i+1].Domain))
+			}
+			if a[i+1].Decision != "" {
+				ra[i].Decision = append(ra[i].Decision, a[i+1].Decision)
 			}
 			if a[i+1].Url != "" {
 				ra[i].Url = append(ra[i].Url, a[i+1].Url)
@@ -261,7 +268,10 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				ra[i+1].Ip = append(ra[i+1].Ip, ip6.String())
 			}
 			if a[i+1].Domain != "" {
-				ra[i+1].Domain = append(ra[i+1].Domain, a[i+1].Domain)
+				ra[i+1].Domain = append(ra[i+1].Domain, PrintedDomain(a[i+1].Domain))
+			}
+			if a[i+1].Decision != "" {
+				ra[i+1].Decision = append(ra[i+1].Decision, a[i+1].Decision)
 			}
 			if a[i+1].Url != "" {
 				ra[i+1].Url = append(ra[i+1].Url, a[i+1].Url)
@@ -366,6 +376,11 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			if len(req.Url) != 0 {
 				for _, u := range req.Url {
 					res += fmt.Sprintf("    _как url_ %s\n", Sanitize(PrintedDomain(u)))
+				}
+			}
+			if len(req.Decision) != 0 {
+				for _, decision := range req.Decision {
+					res += fmt.Sprintf("    _как решение_ %s\n", Sanitize(decision))
 				}
 			}
 			res += "\n"
