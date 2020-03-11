@@ -3,7 +3,7 @@ package main
 
 import (
 	"fmt"
-	"regexp"
+	//"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -246,67 +246,53 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			Debug.Println("!!!!!!!", callbackData, offset)
 		}
 	}
-	//if chat != nil {
-	//	bot.Send(tb.NewChatAction(chat.ID, "typing"))
-	//}
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
-	regex, _ := regexp.Compile(`^/([A-Za-z\_\#\&]+)\s*(.*)$`)
-	matches := regex.FindStringSubmatch(text)
-	// hanlde chat commands
-	if len(matches) > 0 {
-		comm := matches[1]
-		commArgs := []string{""}
-		if len(matches) >= 3 {
-			commArgs = regexp.MustCompile(`\s+`).Split(matches[2], -1)
-			if bot.Self.UserName != "" {
-				for i, s := range commArgs {
-					commArgs[i] = strings.TrimSuffix(s, "@"+bot.Self.UserName)
-				}
-			}
-		}
-		switch comm {
-		case `help`:
-			reply = HelpMessage
-		case `helpen`:
-			reply = HelpMessageEn
-		case `donate`:
-			reply = DonateMessage
-		case `ck`, `check`:
-			if len(commArgs) > 0 {
-				reply, pages = mainSearch(c, commArgs[0], offset)
-			} else {
-				reply = "😱Нечего искать\n"
-			}
-		case `n_`, `#`:
-			if len(commArgs) > 0 {
-				reply, pages = numberSearch(c, commArgs[0], offset)
-			} else {
-				reply = "😱Нечего искать\n"
-			}
-		case `d_`, `&`:
-			if len(commArgs) > 0 {
-				reply, pages = decisionSearch(c, commArgs[0], offset)
-			} else {
-				reply = "😱Нечего искать\n"
-			}
-		case `start`:
-			reply = "Приветствую тебя, " + uname + "!\n"
-			//case `ping`:
-			//	reply = Ping(c)
-			//default:
-			//	reply = "😱 Unknown command\n"
-		}
-		if reply != "" {
-			sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
-		}
-	} else {
-		if len(text) > 0 && text[0] != '/' {
-			reply, pages = mainSearch(c, text, offset)
-			sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
-		} else {
-			reply = "😱Нечего искать\n"
-			sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
-		}
+	if i := strings.IndexByte(text, '\n'); i != -1 {
+		text = strings.Trim(text[:i], " ")
 	}
-	Debug.Println(pages)
+	if text == "" {
+		reply = "\U0001f440 Нечего искать\n"
+	} else if text == "/help" {
+		reply = HelpMessage
+	} else if text == "/helpen" {
+		reply = HelpMessageEn
+	} else if text == "/donate" {
+		reply = DonateMessage
+	} else if text == "/start" {
+		reply = "Приветствую тебя, " + uname + "!\n"
+	} else if text == "/ping" {
+		reply = Ping(c)
+	} else if text == "/ck" || text == "/check" {
+		reply = HelpMessage
+	} else if strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check ") {
+		reply, pages = mainSearch(c, strings.TrimPrefix(strings.TrimPrefix(text, "/ck "), "/check "), offset)
+	} else if strings.HasPrefix(text, "/n_") || strings.HasPrefix(text, "#") {
+		args := ""
+		if strings.HasPrefix(text, "/n_") {
+			args = strings.TrimPrefix(text, "/n_")
+		} else if strings.HasPrefix(text, "#") {
+			args = strings.TrimPrefix(text, "#")
+		}
+		reply, pages = numberSearch(c, args, offset)
+	} else if strings.HasPrefix(text, "/d_") || strings.HasPrefix(text, "&") {
+		args := ""
+		if strings.HasPrefix(text, "/d_") {
+			args = strings.TrimPrefix(text, "/d_")
+		} else if strings.HasPrefix(text, "&") {
+			args = strings.TrimPrefix(text, "&")
+		}
+		reply, pages = decisionSearch(c, args, offset)
+	} else if strings.HasPrefix(text, "/") {
+		reply = "\U0001f523 iNJALID DEJICE\n"
+	} else {
+		reply, pages = mainSearch(c, text, offset)
+	}
+	if reply == "" {
+		reply = "\U0001f463 Ничего не нашлось\n"
+	}
+	sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
+
+	//regex, _ := regexp.Compile(`^/([A-Za-z\_\#\&]+)\s*(.*)$`)
+	//matches := regex.FindStringSubmatch(text)
+	//Debug.Println(pages)
 }

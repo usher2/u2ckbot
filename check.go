@@ -12,12 +12,27 @@ import (
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
-func searchID(c pb.CheckClient, id string) (int64, []*pb.Content, error) {
+func Ping(c pb.CheckClient) string {
+	Info.Printf("Looking for Ping\n")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	r, err := c.Ping(ctx, &pb.PingRequest{Ping: "ping"})
+	if err != nil {
+		Debug.Printf("%v.Ping(_) = _, %v\n", c, err)
+		return fmt.Sprintf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+	}
+	if r.Error != "" {
+		Debug.Printf("ERROR: %s\n", r.Error)
+		return fmt.Sprintf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+	}
+	return fmt.Sprintf("\U0001f919 *%s*%s", r.Pong, printUpToDate(r.RegistryUpdateTime))
+}
+
+func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, error) {
 	Info.Printf("Looking for content: %s\n", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	id32, _ := strconv.Atoi(id)
-	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id32)})
+	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id)})
 	if err != nil {
 		Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
@@ -102,11 +117,10 @@ func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
-func searchDecision(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for &%s\n", s)
+func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, error) {
+	Info.Printf("Looking for &%d\n", decision)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
-	decision, _ := strconv.ParseUint(s, 10, 64)
 	r, err := c.SearchDecision(ctx, &pb.DecisionRequest{Query: decision})
 	if err != nil {
 		Debug.Printf("%v.SearchDecision(_) = _, %v\n", c, err)
@@ -173,7 +187,7 @@ func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages 
 		return
 	}
 	if n, err := strconv.Atoi(s); err == nil && n != 0 {
-		utime, a, err = searchID(c, s)
+		utime, a, err = searchID(c, n)
 		if err == nil {
 			if utime < oldest {
 				oldest = utime
@@ -190,9 +204,9 @@ func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages 
 			res += _res
 		}
 	} else if err != nil {
-		res = err.Error() + "\n"
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error())
 	} else {
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s\n", s)
 	}
 	return
 }
@@ -208,8 +222,8 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
 		return
 	}
-	if n, err := strconv.ParseUint(s, 10, 64); err == nil && n != 0 {
-		utime, a, err = searchDecision(c, s)
+	if n, err := Base32ToUint64(s); err == nil && n != 0 {
+		utime, a, err = searchDecision(c, n)
 		if err == nil {
 			if utime < oldest {
 				oldest = utime
@@ -222,13 +236,13 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 		if err != nil {
 			res = err.Error() + "\n"
 		} else {
-			_res, pages = constructContentResult(a, o)
+			_res, pages = constructResult(a, o)
 			res += _res
 		}
 	} else if err != nil {
-		res = err.Error() + "\n"
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s: %s\n", s, err.Error())
 	} else {
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
+		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s\n", s)
 	}
 	return
 }

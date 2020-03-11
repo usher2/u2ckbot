@@ -1,11 +1,13 @@
 package main
 
 import (
+	"encoding/base32"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"hash/fnv"
 	"net"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,6 +21,8 @@ const (
 	TBLOCK_MASK
 	TBLOCK_IP
 )
+
+const encodeCorc = "abcdefghjkmnpqrstvwxyz0123456789"
 
 const PRINT_LIMIT = 5
 
@@ -45,12 +49,11 @@ type TPagination struct {
 }
 
 type TReason struct {
-	Id       int32
-	Aggr     []string
-	Ip       []string
-	Url      []string
-	Domain   []string
-	Decision []string
+	Id     int32
+	Aggr   []string
+	Ip     []string
+	Url    []string
+	Domain []string
 }
 
 func printUpToDate(t int64) string {
@@ -65,6 +68,29 @@ func printUpToDate(t int64) string {
 		r = 0x2705
 	}
 	return fmt.Sprintf("\n%c _Данные синхронизированы:_ %s\n", r, time.Unix(t, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
+}
+
+func Uint64ToBase32(i uint64) string {
+	b32 := base32.NewEncoding(encodeCorc).WithPadding(base32.NoPadding)
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, i)
+	return b32.EncodeToString(b)
+}
+
+func Base32ToUint64(s string) (uint64, error) {
+	b32 := base32.NewEncoding(encodeCorc).WithPadding(base32.NoPadding)
+	b, err := b32.DecodeString(s)
+	if err == nil {
+		return binary.LittleEndian.Uint64(b), nil
+	} else {
+		return 0, err
+	}
+}
+
+func Decision2base32(s string) string {
+	h64 := fnv.New64a()
+	h64.Write([]byte(s))
+	return Uint64ToBase32(h64.Sum64())
 }
 
 func constructBasis(content *TContent) (res string) {
@@ -118,7 +144,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			bt = "\u274c (ip) "
 		}
 		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-		res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
+		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.Id, dcs, Decision2base32(dcs))
 		res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
 		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
@@ -127,7 +153,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		res += "\n"
 		cnt := 0
 		for i, d := range content.Domain {
-			if o.Tag == OFFSET_DOMAIN && i <= o.Count {
+			if o.Tag == OFFSET_DOMAIN && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -148,7 +174,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_DOMAIN, l})
 		}
 		if cnt > 0 {
@@ -156,7 +182,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		}
 		cnt = 0
 		for i, u := range content.Url {
-			if o.Tag == OFFSET_URL && i <= o.Count {
+			if o.Tag == OFFSET_URL && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -177,7 +203,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_URL, l})
 		}
 		if cnt > 0 {
@@ -185,7 +211,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		}
 		cnt = 0
 		for i, ip := range content.Ip4 {
-			if o.Tag == OFFSET_IP4 && i <= o.Count {
+			if o.Tag == OFFSET_IP4 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -206,7 +232,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_IP4, l})
 		}
 		if cnt > 0 {
@@ -214,7 +240,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		}
 		cnt = 0
 		for i, ip := range content.Ip6 {
-			if o.Tag == OFFSET_IP6 && i <= o.Count {
+			if o.Tag == OFFSET_IP6 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -235,7 +261,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_IP6, l})
 		}
 		if cnt > 0 {
@@ -243,7 +269,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		}
 		cnt = 0
 		for i, sb := range content.Subnet4 {
-			if o.Tag == OFFSET_SUBNET4 && i <= o.Count {
+			if o.Tag == OFFSET_SUBNET4 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -264,7 +290,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_SUBNET4, l})
 		}
 		if cnt > 0 {
@@ -272,7 +298,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		}
 		cnt = 0
 		for i, sb := range content.Subnet6 {
-			if o.Tag == OFFSET_SUBNET6 && i <= o.Count {
+			if o.Tag == OFFSET_SUBNET6 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
@@ -293,7 +319,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
-			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, l)
+			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_SUBNET6, l})
 		}
 		break
@@ -326,9 +352,6 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 	if a[0].Domain != "" {
 		ra[0].Domain = append(ra[0].Domain, PrintedDomain(a[0].Domain))
 	}
-	if a[0].Decision != 0 {
-		ra[0].Decision = append(ra[0].Decision, strconv.FormatUint(a[0].Decision, 10))
-	}
 	if a[0].Url != "" {
 		ra[0].Url = append(ra[0].Url, PrintedDomain(a[0].Url))
 	}
@@ -345,9 +368,6 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			}
 			if a[i+1].Domain != "" {
 				ra[i].Domain = append(ra[i].Domain, PrintedDomain(a[i+1].Domain))
-			}
-			if a[i+1].Decision != 0 {
-				ra[i].Decision = append(ra[i].Decision, strconv.FormatUint(a[i+1].Decision, 10))
 			}
 			if a[i+1].Url != "" {
 				ra[i].Url = append(ra[i].Url, a[i+1].Url)
@@ -369,9 +389,6 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			}
 			if a[i+1].Domain != "" {
 				ra[i+1].Domain = append(ra[i+1].Domain, PrintedDomain(a[i+1].Domain))
-			}
-			if a[i+1].Decision != 0 {
-				ra[i+1].Decision = append(ra[i+1].Decision, strconv.FormatUint(a[i+1].Decision, 10))
 			}
 			if a[i+1].Url != "" {
 				ra[i+1].Url = append(ra[i+1].Url, a[i+1].Url)
@@ -456,7 +473,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				cbi++
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-			res += fmt.Sprintf("%s /n\\_%d %s\n", bt, content.Id, dcs)
+			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.Id, dcs, Decision2base32(dcs))
 			res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
@@ -476,11 +493,6 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			if len(req.Url) != 0 {
 				for _, u := range req.Url {
 					res += fmt.Sprintf("    _как url_ %s\n", Sanitize(PrintedDomain(u)))
-				}
-			}
-			if len(req.Decision) != 0 {
-				for _, decision := range req.Decision {
-					res += fmt.Sprintf("    _как решение_ &%s\n", decision)
 				}
 			}
 			res += "\n"
