@@ -50,6 +50,15 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
 							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован") {
 							req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
+						} else if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
+							strings.Index(update.CallbackQuery.Message.Text[:i], "/d_") != -1 {
+							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
+							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+							if j2 == -1 {
+								req = update.CallbackQuery.Message.Text[j1:]
+							} else {
+								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+							}
 						} else if strings.Index(update.CallbackQuery.Message.Text[:i], "/n_") != -1 {
 							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
 							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
@@ -243,7 +252,6 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		if i != len(callbackData)-1 {
 			offset.Tag, _ = strconv.Atoi(callbackData[:i])
 			offset.Count, _ = strconv.Atoi(callbackData[i+1:])
-			Debug.Println("!!!!!!!", callbackData, offset)
 		}
 	}
 	//log.Printf("[%s] %d %s", UserName, ChatID, Text)

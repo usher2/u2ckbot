@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net"
 	"net/url"
@@ -237,6 +238,14 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 			res = err.Error() + "\n"
 		} else {
 			_res, pages = constructResult(a, o)
+			dcs := "решение: "
+			if len(a) > 0 {
+				content := TContent{}
+				if err := json.Unmarshal(a[0].Pack, &content); err == nil {
+					dcs = fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
+				}
+			}
+			res = fmt.Sprintf("\U0001f4dc /d\\_%s %s\n\n", s, dcs)
 			res += _res
 		}
 	} else if err != nil {
