@@ -30,7 +30,7 @@ func Ping(c pb.CheckClient) string {
 }
 
 func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for content: %s\n", id)
+	Info.Printf("Looking for content: #%d\n", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id)})
