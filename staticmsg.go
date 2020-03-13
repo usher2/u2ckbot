@@ -4,8 +4,8 @@ const (
 	HelpMessageEn string = "*Commands:*\n" +
 		"/helpen - This message\n" +
 		"/help - руководство на русском\n" +
-		"/ck <website or IP>\n/check <website or IP> - check something - IP-address or Domain or URL\n\n" +
-		"/donate - Information about donation methods" +
+		"/ck <website or IP>\n/check <website or IP> - check something - IP-address or Domain or URL\n" +
+		"/donate - Information about donation methods\n\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
 		"Send a record ID (ussualy started with #) to the bot for details\n\n" +
@@ -20,14 +20,14 @@ const (
 	HelpMessage string = "*Команды:*\n" +
 		"/helpen - manual in english\n" +
 		"/help - это сообщение\n" +
-		"/ck <САЙТ или IP-адрес>\n/check <САЙТ или IP-адрес> - проверить IP адрес, домен или URL\n\n" +
-		"/donate - получить информацию о способах пожертвований" +
+		"/ck <САЙТ или IP-адрес>\n/check <САЙТ или IP-адрес> - проверить IP адрес, домен или URL\n" +
+		"/donate - получить информацию о способах пожертвований\n\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
 		"Отправьте ID записи (обозначена '#' в ответах) боту для получения подробностей\n" +
-		"Или воспользуйтесь командами /ck или /check в группах\n\n" +
-		"/n_<НОМЕР> - показывает подробную информацию о данном номере записи в реестре" +
-		"/d_<ИДЕНТИФИКАТОР> - показывает список записей в реестре по данному решению" +
+		"Или воспользуйтесь командами /ck или /check в группах\n" +
+		"/n_<НОМЕР> - показывает подробную информацию о данном номере записи в реестре\n" +
+		"/d_<ИДЕНТИФИКАТОР> - показывает список записей в реестре по данному решению\n\n" +
 		"*Обозначения*\n\n" +
 		"\U000026d4 блокировка по URL. Тип блокировки по умолчанию. Провайдеры ОБЯЗАНЫ фильтровать ТОЛЬКО простой HTTP трафик на определённые URL\n" +
 		"\U0001f4db блокировка HTTPS. Неформальный тип блокировк. Это блокировка по URL с HTTPS схемой. Провайдеры ОБЯЗАНЫ блокировать трафик на домен из URL путем чтения SNI или путём перехвата DNS запросов\n" +
