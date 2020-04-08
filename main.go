@@ -31,7 +31,8 @@ func GetBot(token, proxyUrl, loglevel string) *tb.BotAPI {
 	var bot *tb.BotAPI
 	var err error
 	if proxyUrl != "" {
-		_proxyUrl, err := url.Parse(proxyUrl)
+		var _proxyUrl *url.URL
+		_proxyUrl, err = url.Parse(proxyUrl)
 		if err != nil {
 			log.Panic("Proxy url invalid")
 		}
