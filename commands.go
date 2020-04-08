@@ -17,7 +17,8 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 	for {
 		select {
 		case update := <-updatesChan:
-			if update.Message != nil { // ignore any non-Message Updates
+			switch {
+			case update.Message != nil: // ignore any non-Message Updates
 				if update.Message.Text != "" {
 					if update.Message.Chat.Type == "private" ||
 						(update.Message.ReplyToMessage == nil &&
@@ -32,7 +33,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						go Talks(c, bot, uname, chat, "", 0, "", update.Message.Text)
 					}
 				}
-			} else if update.CallbackQuery != nil {
+			case update.CallbackQuery != nil:
 				var (
 					uname string
 					req   string
@@ -47,11 +48,12 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 					chat = update.CallbackQuery.Message.Chat
 					i := strings.IndexByte(update.CallbackQuery.Message.Text, '\n')
 					if i > 0 {
-						if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
-							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован") {
+						switch {
+						case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
+							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован"):
 							req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
-						} else if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
-							strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_") {
+						case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
+							strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_"):
 							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
 							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
 							if j2 == -1 {
@@ -59,7 +61,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 							} else {
 								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
 							}
-						} else if strings.Contains(update.CallbackQuery.Message.Text[:i], "/n_") {
+						case strings.Contains(update.CallbackQuery.Message.Text[:i], "/n_"):
 							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
 							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
 							if j2 != -1 {
@@ -70,7 +72,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 				}
 				go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
 				go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
-			} else if update.InlineQuery != nil {
+			case update.InlineQuery != nil:
 				if update.InlineQuery.Query != "" {
 					var uname string
 					// who writing
@@ -107,17 +109,18 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 				o = offset.Count
 			}
 			slug := strconv.Itoa(o/PRINT_LIMIT + 1)
-			if curTag == OFFSET_DOMAIN {
+			switch curTag {
+			case OFFSET_DOMAIN:
 				slug = "домен"
-			} else if curTag == OFFSET_URL {
+			case OFFSET_URL:
 				slug = "URL"
-			} else if curTag == OFFSET_IP4 {
+			case OFFSET_IP4:
 				slug = "IPv4"
-			} else if curTag == OFFSET_IP6 {
+			case OFFSET_IP6:
 				slug = "IPv6"
-			} else if curTag == OFFSET_SUBNET4 {
+			case OFFSET_SUBNET4:
 				slug = "подсеть v4"
-			} else if curTag == OFFSET_SUBNET6 {
+			case OFFSET_SUBNET6:
 				slug = "подсеть v6"
 			}
 			if pages[i].Count > 2*PRINT_LIMIT {
@@ -258,23 +261,24 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 	if i := strings.IndexByte(text, '\n'); i != -1 {
 		text = strings.Trim(text[:i], " ")
 	}
-	if text == "" {
+	switch {
+	case text == "":
 		reply = "\U0001f440 Нечего искать\n"
-	} else if text == "/help" {
+	case text == "/help":
 		reply = HelpMessage
-	} else if text == "/helpen" {
+	case text == "/helpen":
 		reply = HelpMessageEn
-	} else if text == "/donate" {
+	case text == "/donate":
 		reply = DonateMessage
-	} else if text == "/start" {
+	case text == "/start":
 		reply = "Приветствую тебя, " + uname + "!\n"
-	} else if text == "/ping" {
+	case text == "/ping":
 		reply = Ping(c)
-	} else if text == "/ck" || text == "/check" {
+	case text == "/ck" || text == "/check":
 		reply = HelpMessage
-	} else if strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check ") {
+	case strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check "):
 		reply, pages = mainSearch(c, strings.TrimPrefix(strings.TrimPrefix(text, "/ck "), "/check "), offset)
-	} else if strings.HasPrefix(text, "/n_") || strings.HasPrefix(text, "#") {
+	case strings.HasPrefix(text, "/n_") || strings.HasPrefix(text, "#"):
 		args := ""
 		if strings.HasPrefix(text, "/n_") {
 			args = strings.TrimPrefix(text, "/n_")
@@ -282,7 +286,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			args = strings.TrimPrefix(text, "#")
 		}
 		reply, pages = numberSearch(c, args, offset)
-	} else if strings.HasPrefix(text, "/d_") || strings.HasPrefix(text, "&") {
+	case strings.HasPrefix(text, "/d_") || strings.HasPrefix(text, "&"):
 		args := ""
 		if strings.HasPrefix(text, "/d_") {
 			args = strings.TrimPrefix(text, "/d_")
@@ -290,9 +294,9 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			args = strings.TrimPrefix(text, "&")
 		}
 		reply, pages = decisionSearch(c, args, offset)
-	} else if strings.HasPrefix(text, "/") {
+	case strings.HasPrefix(text, "/"):
 		reply = "\U0001f523 iNJALID DEJICE\n"
-	} else {
+	default:
 		reply, pages = mainSearch(c, text, offset)
 	}
 	if reply == "" {

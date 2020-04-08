@@ -187,7 +187,9 @@ func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages 
 		res = "\U0001f914 Что имелось ввиду?..\n"
 		return
 	}
-	if n, err := strconv.Atoi(s); err == nil && n != 0 {
+	n, err := strconv.Atoi(s)
+	switch {
+	case err == nil && n != 0:
 		utime, a, err = searchID(c, n)
 		if err == nil {
 			if utime < oldest {
@@ -204,9 +206,9 @@ func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages 
 			_res, pages = constructContentResult(a, o)
 			res += _res
 		}
-	} else if err != nil {
+	case err != nil:
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error())
-	} else {
+	default:
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s\n", s)
 	}
 	return
@@ -223,7 +225,9 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 		res = "\U0001f914 Что имелось ввиду?..\n"
 		return
 	}
-	if n, err := Base32ToUint64(s); err == nil && n != 0 {
+	n, err := Base32ToUint64(s)
+	switch {
+	case err == nil && n != 0:
 		utime, a, err = searchDecision(c, n)
 		if err == nil {
 			if utime < oldest {
@@ -248,9 +252,9 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 			res = fmt.Sprintf("\U0001f4dc /d\\_%s %s\n\n", s, dcs)
 			res += _res
 		}
-	} else if err != nil {
+	case err != nil:
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s: %s\n", s, err.Error())
-	} else {
+	default:
 		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s\n", s)
 	}
 	return
@@ -285,7 +289,8 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 		_ur = fmt.Errorf("fake")
 	}
 	ip := net.ParseIP(s)
-	if ip != nil {
+	switch {
+	case ip != nil:
 		if ip.To4() != nil {
 			utime, a, err = searchIP4(c, s)
 			if err == nil {
@@ -322,7 +327,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			_res, pages = constructResult(a, o)
 			res += _res
 		}
-	} else if isDomainName(domain) {
+	case isDomainName(domain):
 		utime, a, err = searchDomain(c, s)
 		if err == nil {
 			if utime < oldest {
@@ -370,7 +375,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			_res, pages = constructResult(a, o)
 			res += _res
 		}
-	} else if _ur == nil {
+	case _ur == nil:
 		if _u.Scheme != "https" && _u.Scheme != "http" {
 			utime, a, err = searchURL(c, s)
 		} else {
@@ -409,7 +414,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 			_res, pages = constructResult(a, o)
 			res += _res
 		}
-	} else {
+	default:
 		utime, a, err = searchURL(c, s)
 		if err == nil {
 			if utime < oldest {
