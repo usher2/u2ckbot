@@ -47,7 +47,7 @@ func ReadConfigFile(file string) (c *Config, err error) {
 
 		for scanner.Scan() {
 			line := strings.TrimSpace(scanner.Text())
-			l += 1
+			l++
 
 			if len(line) > 0 && line[0] != '#' {
 				parts := strings.SplitN(line, "=", 2)

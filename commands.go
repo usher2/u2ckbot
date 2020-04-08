@@ -195,7 +195,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			noAdCount = 0
 		} else {
 			//text += Footer
-			noAdCount += 1
+			noAdCount++
 		}
 		if messageId > 0 {
 			msg := tb.NewEditMessageText(chat.ID, messageId, text)

@@ -14,12 +14,12 @@ func parseIp4(s string) uint32 {
 			}
 		case s[i] == '.':
 			if r != 0 {
-				ip = ip + (n << r)
+				ip += (n << r)
 			} else {
 				//Debug.Printf("Bad IP (2): %s\n", s)
 				return 0xFFFFFFFF
 			}
-			r = r - 8
+			r -= 8
 			n = 0
 		default:
 			//Debug.Printf("Bad IP (3): %s\n", s)
@@ -30,7 +30,7 @@ func parseIp4(s string) uint32 {
 		//Debug.Printf("Bad IP (4): %s\n", s)
 		return 0xFFFFFFFF
 	}
-	ip = ip + n
+	ip += n
 	return ip
 }
 
