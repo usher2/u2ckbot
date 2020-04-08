@@ -20,7 +20,7 @@ func Ping(c pb.CheckClient) string {
 	r, err := c.Ping(ctx, &pb.PingRequest{Ping: "ping"})
 	if err != nil {
 		Debug.Printf("%v.Ping(_) = _, %v\n", c, err)
-		return fmt.Sprintf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+		return "\U00002620 Что-то пошло не так! Повторите попытку позже\n"
 	}
 	if r.Error != "" {
 		Debug.Printf("ERROR: %s\n", r.Error)
@@ -184,7 +184,7 @@ func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages 
 		_res   string
 	)
 	if len(s) == 0 {
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
+		res = "\U0001f914 Что имелось ввиду?..\n"
 		return
 	}
 	if n, err := strconv.Atoi(s); err == nil && n != 0 {
@@ -220,7 +220,7 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, page
 		_res   string
 	)
 	if len(s) == 0 {
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
+		res = "\U0001f914 Что имелось ввиду?..\n"
 		return
 	}
 	if n, err := Base32ToUint64(s); err == nil && n != 0 {
@@ -265,7 +265,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 		_res   string
 	)
 	if len(s) == 0 {
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?..\n")
+		res = "\U0001f914 Что имелось ввиду?..\n"
 		return
 	}
 	domain := NormalizeDomain(s)
@@ -352,7 +352,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []
 					if utime < oldest {
 						oldest = utime
 					}
-					res += fmt.Sprintf("\n\U0001f525 но может быть ограничен по IP-адресу:\n")
+					res += "\n\U0001f525 но может быть ограничен по IP-адресу:\n"
 					for _, ip := range ips4 {
 						res += fmt.Sprintf("    %s\n", ip)
 					}
