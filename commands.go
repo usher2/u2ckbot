@@ -51,7 +51,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован") {
 							req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
 						} else if strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
-							strings.Index(update.CallbackQuery.Message.Text[:i], "/d_") != -1 {
+							strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_") {
 							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
 							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
 							if j2 == -1 {
@@ -59,7 +59,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 							} else {
 								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
 							}
-						} else if strings.Index(update.CallbackQuery.Message.Text[:i], "/n_") != -1 {
+						} else if strings.Contains(update.CallbackQuery.Message.Text[:i], "/n_") {
 							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
 							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
 							if j2 != -1 {
