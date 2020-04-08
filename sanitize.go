@@ -10,9 +10,8 @@ func PrintedDomain(domain string) string {
 	_domain, err := idna.ToUnicode(domain)
 	if err != nil {
 		return domain
-	} else {
-		return _domain
 	}
+	return _domain
 }
 
 func Sanitize(s string) (res string) {

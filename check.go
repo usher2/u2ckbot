@@ -171,9 +171,8 @@ func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []st
 	}
 	if err != nil {
 		return oldest, nil, ips4, ips6, err
-	} else {
-		return oldest, a, ips4, ips6, nil
 	}
+	return oldest, a, ips4, ips6, nil
 }
 
 func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {

@@ -82,9 +82,8 @@ func Base32ToUint64(s string) (uint64, error) {
 	b, err := b32.DecodeString(s)
 	if err == nil {
 		return binary.LittleEndian.Uint64(b), nil
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 func Decision2base32(s string) string {
