@@ -30,19 +30,18 @@ func NormalizeUrl(u string) string {
 		Error.Printf("URL parse error: %s\n", err.Error())
 		// add as is
 		return u
-	} else {
-		port := ""
-		domain := _url.Hostname()
-		colon := strings.LastIndexByte(domain, ':')
-		if colon != -1 && validOptionalPort(domain[colon:]) {
-			domain, port = domain[:colon], domain[colon+1:]
-		}
-		domain = NormalizeDomain(domain)
-		_url.Host = domain
-		if port != "" {
-			_url.Host = _url.Host + ":" + port
-		}
-		_url.Fragment = ""
-		return _url.String()
 	}
+	port := ""
+	domain := _url.Hostname()
+	colon := strings.LastIndexByte(domain, ':')
+	if colon != -1 && validOptionalPort(domain[colon:]) {
+		domain, port = domain[:colon], domain[colon+1:]
+	}
+	domain = NormalizeDomain(domain)
+	_url.Host = domain
+	if port != "" {
+		_url.Host = _url.Host + ":" + port
+	}
+	_url.Fragment = ""
+	return _url.String()
 }

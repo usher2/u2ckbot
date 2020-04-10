@@ -82,9 +82,8 @@ func Base32ToUint64(s string) (uint64, error) {
 	b, err := b32.DecodeString(s)
 	if err == nil {
 		return binary.LittleEndian.Uint64(b), nil
-	} else {
-		return 0, err
 	}
+	return 0, err
 }
 
 func Decision2base32(s string) string {
@@ -95,21 +94,22 @@ func Decision2base32(s string) string {
 
 func constructBasis(content *TContent) (res string) {
 	basis := "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая"
-	if content.EntryType == 1 && content.Decision.Org == "Генпрокуратура" {
+	switch {
+	case content.EntryType == 1 && content.Decision.Org == "Генпрокуратура":
 		basis = "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение"
-	} else if content.EntryType == 2 {
+	case content.EntryType == 2:
 		basis = "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание"
-	} else if content.EntryType == 3 {
+	case content.EntryType == 3:
 		basis = "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки"
-	} else if content.EntryType == 4 {
+	case content.EntryType == 4:
 		basis = "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ"
-	} else if content.EntryType == 5 && content.Decision.Org == "Мосгорсуд" {
+	case content.EntryType == 5 && content.Decision.Org == "Мосгорсуд":
 		basis = "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная"
-	} else if content.EntryType == 5 && content.Decision.Org == "Минкомсвязь" {
+	case content.EntryType == 5 && content.Decision.Org == "Минкомсвязь":
 		basis = "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал"
-	} else if content.EntryType == 6 {
+	case content.EntryType == 6:
 		basis = "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные"
-	} else if content.EntryType == 7 {
+	case content.EntryType == 7:
 		basis = "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN"
 	}
 	return basis
@@ -166,11 +166,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_DOMAIN {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -195,11 +196,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_URL {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -224,11 +226,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_IP4 {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -253,11 +256,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_IP6 {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -282,11 +286,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_SUBNET4 {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -311,11 +316,12 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_SUBNET6 {
-				if l <= PRINT_LIMIT {
+				switch {
+				case l <= PRINT_LIMIT:
 					offset = 0
-				} else if o.Count > l-(l%PRINT_LIMIT) {
+				case o.Count > l-(l%PRINT_LIMIT):
 					offset = l - (l % PRINT_LIMIT)
-				} else {
+				default:
 					offset = o.Count
 				}
 			}
@@ -397,34 +403,36 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 		}
 	}
 	sort.Slice(a, func(j, i int) bool {
-		if a[i].BlockType == TBLOCK_URL && a[j].BlockType != TBLOCK_URL {
+		switch {
+		case a[i].BlockType == TBLOCK_URL && a[j].BlockType != TBLOCK_URL:
 			return true
-		} else if a[i].BlockType == TBLOCK_HTTPS &&
+		case a[i].BlockType == TBLOCK_HTTPS &&
 			(a[j].BlockType != TBLOCK_URL &&
-				a[j].BlockType != TBLOCK_HTTPS) {
+				a[j].BlockType != TBLOCK_HTTPS):
 			return true
-		} else if a[i].BlockType == TBLOCK_DOMAIN &&
+		case a[i].BlockType == TBLOCK_DOMAIN &&
 			(a[j].BlockType != TBLOCK_URL &&
 				a[j].BlockType != TBLOCK_HTTPS &&
-				a[j].BlockType != TBLOCK_DOMAIN) {
+				a[j].BlockType != TBLOCK_DOMAIN):
 			return true
-		} else if a[i].BlockType == TBLOCK_MASK &&
+		case a[i].BlockType == TBLOCK_MASK &&
 			(a[j].BlockType != TBLOCK_URL &&
 				a[j].BlockType != TBLOCK_HTTPS &&
 				a[j].BlockType != TBLOCK_DOMAIN &&
-				a[j].BlockType != TBLOCK_MASK) {
+				a[j].BlockType != TBLOCK_MASK):
 			return true
-		} else {
+		default:
 			return false
 		}
 	})
 	offset := 0
 	if o.Tag == OFFSET_CONTENT {
-		if len(a) <= PRINT_LIMIT {
+		switch {
+		case len(a) <= PRINT_LIMIT:
 			offset = 0
-		} else if o.Count > len(a)-(len(a)%PRINT_LIMIT) {
+		case o.Count > len(a)-(len(a)%PRINT_LIMIT):
 			offset = len(a) - (len(a) % PRINT_LIMIT)
-		} else {
+		default:
 			offset = o.Count
 		}
 	}
