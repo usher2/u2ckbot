@@ -271,7 +271,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 	case text == "/donate":
 		reply = DonateMessage
 	case text == "/start":
-		reply = "Приветствую тебя, " + uname + "!\n"
+		reply = "Приветствую тебя, " + Sanitize(uname) + "!\n"
 	case text == "/ping":
 		reply = Ping(c)
 	case text == "/ck" || text == "/check":

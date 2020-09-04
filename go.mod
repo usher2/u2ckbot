@@ -4,13 +4,14 @@ go 1.14
 
 require (
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
-	github.com/golang/protobuf v1.3.4
-	github.com/miekg/dns v1.1.27
+	github.com/golang/protobuf v1.4.2
+	github.com/miekg/dns v1.1.31
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
-	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d // indirect
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a
-	golang.org/x/sys v0.0.0-20200301040627-c5d0d7b4ec88 // indirect
-	golang.org/x/text v0.3.2 // indirect
-	google.golang.org/genproto v0.0.0-20200228133532-8c2c7df3a383 // indirect
-	google.golang.org/grpc v1.27.1
+	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
+	golang.org/x/net v0.0.0-20200822124328-c89045814202
+	golang.org/x/sys v0.0.0-20200831180312-196b9ba8737a // indirect
+	golang.org/x/text v0.3.3 // indirect
+	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
+	google.golang.org/grpc v1.31.1
+	google.golang.org/protobuf v1.25.0 // indirect
 )
