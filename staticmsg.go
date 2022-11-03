@@ -36,20 +36,17 @@ const (
 		"\u274c блокировка по IP адресу. Провайдеры ОБЯЗАНЫ блокировать ВЕСЬ IP адрес или подсеть\n"
 
 	DonateMessage string = "\U00002b50 *Традиционные способы:*\n" +
-		"Яндекс.Деньги: https://sobe.ru/na/m2i2s077M0g2\n" +
-		"WMZ: Z991867115444\n" +
-		"WME: E261636674470\n" +
-		"WMX: X862559021665\n\n" +
+		"Paypal: https://www.paypal.me/schorsx\n" +
+		"ЮMoney (бывшие ЯДеньги): https://sobe.ru/na/m2i2s077M0g2\n" +
 		"\U0001f3f5 *Сделать меня криптомагнатом:*\n" +
 		"BTC: 18YFeAV12ktBxv9hy4wSiSCUXXAh5VR7gE\n" +
 		"LTC: LVXP51M8MrzaEQi6eBEGWpTSwckybqHU5s\n" +
 		"ETH: 0xba53cebd99157bf412a6bb91165e7dff29abd0a2\n" +
 		"ZEC: t1McmUhzdsauoXpiu2yCjNpnLKGGH225aAW\n" +
-		"DGE: D8cZwBsVp1hW4mjTCgspEKG5TpPZycTJBn\n" +
 		"BCH: 1FiXmPZ6eecHVaZbgdadAuzQLU9kqdSzVN\n" +
 		"ETC: 0xeb990a29d4f870b5fdbe331db90d9849ce3dae77\n" +
-		"WAX: 0xba53cebd99157bf412a6bb91165e7dff29abd0a2\n\n" +
-		"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n\n"
+		"TON: EQBrl8BNLWNVvmSCZDNexzoGQLIojnp4xNDT6Wf4AFX4S_57\n\n"
+		//"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n\n"
 
 	Footer string = "" /*"--- \n" +
 	"Часть проекта @usher2\n\n" /*+
@@ -58,6 +55,5 @@ const (
 	"хостинга проектов Эшер II - сайт, сбор выгрузок, бот этот. " +
 	"Даже писать посты стало решительно некогда. /donate \n" */
 
-	DonateFooter string = "Для дальнейшей поддержки и разработки бота и его окружения " +
-		"требуется финансовая поддержка. /donate\n"
+	DonateFooter string = "Хочу новый ноут и мониторы: /donate\n"
 )
