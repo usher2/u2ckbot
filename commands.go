@@ -1,4 +1,3 @@
-//go:generate protoc -I msg --go_out=plugins=grpc:msg msg/msg.proto
 package main
 
 import (
