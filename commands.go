@@ -98,7 +98,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 	sort.Slice(pages, func(i, j int) bool {
 		return pages[i].Tag < pages[j].Tag
 	})
-	for i, _ := range pages {
+	for i := range pages {
 		curTag := pages[i].Tag
 		if pages[i].Count > PRINT_LIMIT {
 			row := tb.NewInlineKeyboardRow()
