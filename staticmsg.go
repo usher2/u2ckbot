@@ -45,7 +45,7 @@ const (
 		"ZEC: t1McmUhzdsauoXpiu2yCjNpnLKGGH225aAW\n" +
 		"BCH: 1FiXmPZ6eecHVaZbgdadAuzQLU9kqdSzVN\n" +
 		"ETC: 0xeb990a29d4f870b5fdbe331db90d9849ce3dae77\n" +
-		"TON: EQBrl8BNLWNVvmSCZDNexzoGQLIojnp4xNDT6Wf4AFX4S_57\n\n"
+		"TON: EQBrl8BNLWNVvmSCZDNexzoGQLIojnp4xNDT6Wf4AFX4S\\_57\n\n"
 		//"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n\n"
 
 	Footer string = "" /*"--- \n" +
