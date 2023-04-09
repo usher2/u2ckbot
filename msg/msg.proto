@@ -1,7 +1,7 @@
 syntax = "proto3";
 
 package msg;
-option go_package = "guthub.com/usher2/u2ckbot/msg";
+option go_package = "github.com/usher2/u2ckbot/msg";
 
 message IDRequest {
         int32 query = 1;
