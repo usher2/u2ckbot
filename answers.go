@@ -106,7 +106,7 @@ func constructBasis(content *TContent) (res string) {
 		basis = "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ не молчи"
 	case content.EntryType == 5 && content.Decision.Org == "Мосгорсуд":
 		basis = "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная"
-	case content.EntryType == 5 && content.Decision.Org == "Минкомсвязь":
+	case content.EntryType == 5 && content.Decision.Org == "Минцифра":
 		basis = "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал"
 	case content.EntryType == 6:
 		basis = "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные"

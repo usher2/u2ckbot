@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net"
+	"net/netip"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -14,434 +15,547 @@ import (
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
+const (
+	ErrorMessageSomethingGoingWrong = "\U00002620 Что-то пошло не так! Повторите попытку позже"
+	ErrorMesssageTryAgainLater      = "\u23f3 Повторите попытку позже: %s"
+)
+
+func errMsgTryAgainLater(s string) string {
+	return fmt.Sprintf(ErrorMesssageTryAgainLater, s)
+}
+
+// Ping - ping API server.
 func Ping(c pb.CheckClient) string {
 	logger.Info.Printf("Looking for Ping\n")
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	r, err := c.Ping(ctx, &pb.PingRequest{Ping: "ping"})
 	if err != nil {
 		logger.Debug.Printf("%v.Ping(_) = _, %v\n", c, err)
-		return "\U00002620 Что-то пошло не так! Повторите попытку позже\n"
+
+		return ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return fmt.Sprintf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return errMsgTryAgainLater(r.Error)
 	}
+
 	return fmt.Sprintf("\U0001f919 *%s*%s", r.Pong, printUpToDate(r.RegistryUpdateTime))
 }
 
-func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, error) {
+func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for content: #%d\n", id)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id)})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func searchIP4(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
+func searchIP4(c pb.CheckClient, ip netip.Addr) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for %s\n", ip)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
+
+	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip.String())})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func searchIP6(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
+func searchIP6(c pb.CheckClient, ip netip.Addr) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for %s\n", ip)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	ip6 := net.ParseIP(ip)
-	if len(ip6) == 0 {
-		return MAX_TIMESTAMP, nil, fmt.Errorf("Не могу разобрать IP-адрес: %s\n", ip)
-	}
-	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip6})
+
+	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip.AsSlice()})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, error) {
+func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, string) {
 	_url := NormalizeURL(u)
 	if _url != u {
 		fmt.Printf("Input was %s\n", u)
 	}
+
 	logger.Info.Printf("Looking for %s\n", _url)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
+func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, string) {
 	domain := NormalizeDomain(s)
+
 	logger.Info.Printf("Looking for %s\n", domain)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
+
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchDomain(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, error) {
+func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for &%d\n", decision)
+
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
+
 	r, err := c.SearchDecision(ctx, &pb.DecisionRequest{Query: decision})
 	if err != nil {
 		logger.Debug.Printf("%v.SearchDecision(_) = _, %v\n", c, err)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
 	}
+
 	if r.Error != "" {
 		logger.Debug.Printf("ERROR: %s\n", r.Error)
-		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
 	}
-	return r.RegistryUpdateTime, r.Results[:], nil
+
+	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
-func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []string, error) {
+// refSearch - searches for domain, IP4 and IP6. Returns oldest timestamp, results and errors.
+func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []string, string) {
 	var (
-		err        error
-		oldest     int64 = MAX_TIMESTAMP
-		utime      int64
-		a, a2      []*pb.Content
-		ips4, ips6 []string
+		oldest int64 = MAX_TIMESTAMP
+		a      []*pb.Content
 	)
+
 	domain := NormalizeDomain(s)
-	ips4 = getIP4(domain)
+
+	ips4 := getIP4(domain)
 	for _, ip := range ips4 {
-		utime, a2, err = searchIP4(c, ip)
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			a = append(a, a2...)
-		} else {
-			break
+		parsedIP, err := netip.ParseAddr(ip)
+		if err != nil {
+			continue
 		}
-	}
-	if err == nil {
-		ips6 = getIP6(domain)
-		for _, ip := range ips6 {
-			utime, a2, err = searchIP6(c, ip)
-			if err == nil {
-				if utime < oldest {
-					oldest = utime
-				}
-				a = append(a, a2...)
-			} else {
-				break
-			}
+
+		utime, a2, errMsg := searchIP4(c, parsedIP)
+		if errMsg != "" {
+			return oldest, nil, nil, nil, errMsg
 		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		a = append(a, a2...)
 	}
-	if err != nil {
-		return oldest, nil, ips4, ips6, err
+
+	ips6 := getIP6(domain)
+	for _, ip := range ips6 {
+		parsedIP, err := netip.ParseAddr(ip)
+		if err != nil {
+			continue
+		}
+
+		utime, a2, errMsg := searchIP6(c, parsedIP)
+		if errMsg != "" {
+			return oldest, nil, nil, nil, errMsg
+		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		a = append(a, a2...)
 	}
-	return oldest, a, ips4, ips6, nil
+
+	return oldest, a, ips4, ips6, ""
 }
 
-func numberSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
-	var (
-		a      []*pb.Content
-		oldest int64 = MAX_TIMESTAMP
-		utime  int64
-		_res   string
-	)
+// numberSearch - searches for a internal Roscomnadzor record number.
+func numberSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
+	var oldestRecordTimestamp int64 = MAX_TIMESTAMP
+
 	if len(s) == 0 {
-		res = "\U0001f914 Что имелось ввиду?..\n"
-		return
+		return "\U0001f914 Что имелось ввиду?..\n", nil
 	}
+
 	n, err := strconv.Atoi(s)
-	switch {
-	case err == nil && n != 0:
-		utime, a, err = searchID(c, n)
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			if len(a) == 0 {
-				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
-				res += printUpToDate(oldest)
-			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructContentResult(a, o)
-			res += _res
-		}
-	case err != nil:
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error())
-	default:
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s\n", s)
+	if err != nil {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error()), nil
 	}
-	return
+
+	if n == 0 {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s\n", s), nil
+	}
+
+	recordUpdateTimestamp, a, errMsg := searchID(c, n)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if recordUpdateTimestamp < oldestRecordTimestamp {
+		oldestRecordTimestamp = recordUpdateTimestamp
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", s, printUpToDate(oldestRecordTimestamp)), nil
+	}
+
+	return constructContentResult(a, o)
 }
 
-func decisionSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
+func decisionSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
 	var (
 		a      []*pb.Content
 		oldest int64 = MAX_TIMESTAMP
-		utime  int64
-		_res   string
 	)
+
 	if len(s) == 0 {
-		res = "\U0001f914 Что имелось ввиду?..\n"
-		return
+		return "\U0001f914 Что имелось ввиду?..\n", nil
 	}
+
 	n, err := Base32ToUint64(s)
-	switch {
-	case err == nil && n != 0:
-		utime, a, err = searchDecision(c, n)
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			if len(a) == 0 {
-				res = fmt.Sprintf("\U0001f914 %s *не найден*\n", s)
-				res += printUpToDate(oldest)
-			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructResult(a, o)
-			dcs := "решение: "
-			if len(a) > 0 {
-				content := TContent{}
-				if err := json.Unmarshal(a[0].Pack, &content); err == nil {
-					dcs = fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-				}
-			}
-			res = fmt.Sprintf("\U0001f4dc /d\\_%s %s\n\n", s, dcs)
-			res += _res
-		}
-	case err != nil:
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s: %s\n", s, err.Error())
-	default:
-		res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /d\\_%s\n", s)
+	if err != nil {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error()), nil
 	}
-	return
+
+	if n == 0 {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s\n", s), nil
+	}
+
+	utime, a, errMsg := searchDecision(c, n)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if utime < oldest {
+		oldest = utime
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", s, printUpToDate(oldest)), nil
+	}
+
+	res, pages := constructResult(a, o)
+
+	content := TContent{}
+	if err := json.Unmarshal(a[0].Pack, &content); err != nil {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error()), nil
+	}
+
+	dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
+
+	return fmt.Sprintf("\U0001f4dc /d\\_%s %s\n\n%s", s, dcs, res), pages
 }
 
-func mainSearch(c pb.CheckClient, s string, o TPagination) (res string, pages []TPagination) {
-	var (
-		err    error
-		a, a2  []*pb.Content
-		oldest int64 = MAX_TIMESTAMP
-		utime  int64
-		_res   string
-	)
+func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
+	var oldest int64 = MAX_TIMESTAMP
+
+	fmt.Fprintf(os.Stderr, "**** mainSearch: %s\n", s)
+
 	if len(s) == 0 {
-		res = "\U0001f914 Что имелось ввиду?..\n"
-		return
+		return "\U0001f914 Что имелось ввиду?..\n", nil
 	}
+
+	// normalize domain.
 	domain := NormalizeDomain(s)
-	if len(s) > 2 {
-		if s[0] == '"' && s[len(s)-1] == '"' {
-			s = s[1 : len(s)-2]
-			domain = s
-		}
-	}
-	_u, _ur := url.Parse(s)
-	if _ur == nil && _u.IsAbs() &&
-		(_u.Scheme == "http" || _u.Scheme == "https") &&
-		(_u.Port() == "80" || _u.Port() == "443" || _u.Port() == "") &&
-		(_u.RequestURI() == "" || _u.RequestURI() == "/") {
-		s = _u.Hostname()
+
+	parsedURL, errParseURL := url.Parse(NormalizeURL(s))
+	if errParseURL == nil && parsedURL.IsAbs() &&
+		(parsedURL.Scheme == "http" || parsedURL.Scheme == "https") &&
+		(parsedURL.Port() == "80" || parsedURL.Port() == "443" || parsedURL.Port() == "") &&
+		(parsedURL.RequestURI() == "" || parsedURL.RequestURI() == "/") {
+		s = parsedURL.Hostname()
 		domain = NormalizeDomain(s)
-		_ur = fmt.Errorf("fake")
+		errParseURL = fmt.Errorf("fake")
 	}
-	ip := net.ParseIP(s)
+
+	// try to parse as IP.
+	parsedIP, errParseAddr := netip.ParseAddr(s)
+
+	fmt.Fprintf(os.Stderr, "**** mainSearch: %s, %s, %s\n", s, domain, parsedIP)
+
 	switch {
-	case ip != nil:
-		if ip.To4() != nil {
-			utime, a, err = searchIP4(c, s)
-			if err == nil {
-				if utime < oldest {
-					oldest = utime
-				}
-				utime, a2, err = searchDomain(c, s)
-				if err == nil {
-					if utime < oldest {
-						oldest = utime
-					}
-					if len(a2) > 0 {
-						a = append(a, a2...)
-					}
-				}
-			}
-		} else {
-			utime, a, err = searchIP6(c, s)
-		}
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
-			} else {
-				res = fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
-				res += printUpToDate(oldest)
-			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructResult(a, o)
-			res += _res
-		}
-	case isDomainName(domain):
-		utime, a, err = searchDomain(c, s)
-		if err == nil {
-			if utime < oldest {
-				oldest = utime
-			}
-			if strings.HasPrefix(s, "www.") {
-				utime, a2, err = searchDomain(c, s[4:])
-			} else {
-				utime, a2, err = searchDomain(c, "www."+s)
+	case errParseAddr == nil:
+		fmt.Fprintln(os.Stderr, "**** mainSearch: IP")
+
+		switch {
+		case parsedIP.Is4():
+			utime, a, errMsg := searchIP4(c, parsedIP)
+			if errMsg != "" {
+				return errMsg + "\n", nil
 			}
 
-		}
-		if err == nil {
 			if utime < oldest {
 				oldest = utime
 			}
+
+			utime, a2, errMsg := searchDomain(c, s)
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
 			if len(a2) > 0 {
 				a = append(a, a2...)
-			}
-			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n", Sanitize(s))
-			} else {
-				res = fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
-				var ips4, ips6 []string
-				utime, a, ips4, ips6, err = refSearch(c, s)
-				if err == nil && len(a) > 0 {
-					if utime < oldest {
-						oldest = utime
-					}
-					res += "\n\U0001f525 но может быть ограничен по IP-адресу:\n"
-					for _, ip := range ips4 {
-						res += fmt.Sprintf("    %s\n", ip)
-					}
-					for _, ip := range ips6 {
-						res += fmt.Sprintf("    %s\n", ip)
-					}
-				} else {
-					res += printUpToDate(oldest)
-				}
-			}
-		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructResult(a, o)
-			res += _res
-		}
-	case _ur == nil:
-		if _u.Scheme != "https" && _u.Scheme != "http" {
-			utime, a, err = searchURL(c, s)
-		} else {
-			_u.Scheme = "https"
-			utime, a, err = searchURL(c, _u.String())
-			if err == nil {
+
 				if utime < oldest {
 					oldest = utime
 				}
-				_u.Scheme = "http"
-				utime, a2, err = searchURL(c, _u.String())
-				if err == nil {
-					if utime < oldest {
-						oldest = utime
-					}
-					if len(a2) > 0 {
-						a = append(a, a2...)
-					}
-				}
 			}
-		}
-		if err == nil {
+
+			if len(a) == 0 {
+				return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", Sanitize(s), printUpToDate(oldest)), nil
+			}
+
+			res, pages := constructResult(a, o)
+
+			return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
+		case parsedIP.Is6():
+			utime, a, errMsg := searchIP6(c, parsedIP)
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
 			if utime < oldest {
 				oldest = utime
 			}
-			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n", Sanitize(s))
-			} else {
-				res = fmt.Sprintf("\u2705 URL %s *не заблокирован*\n", Sanitize(s))
-				res += printUpToDate(oldest)
+
+			if len(a) == 0 {
+				return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", Sanitize(s), printUpToDate(oldest)), nil
+			}
+
+			res, pages := constructResult(a, o)
+
+			return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
+
+		default:
+			return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s), nil
+		}
+	case isDomainName(domain):
+		fmt.Fprintln(os.Stderr, "**** mainSearch: domain")
+
+		utime, a, errMsg := searchDomain(c, s)
+		if errMsg != "" {
+			return errMsg + "\n", nil
+		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		switch {
+		case strings.HasPrefix(s, "www."):
+			utime, a2, errMsg := searchDomain(c, s[4:])
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
+			if len(a2) > 0 {
+				a = append(a, a2...)
+
+				if utime < oldest {
+					oldest = utime
+				}
+			}
+		default:
+			utime, a2, errMsg := searchDomain(c, "www."+s)
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
+			if len(a2) > 0 {
+				a = append(a, a2...)
+
+				if utime < oldest {
+					oldest = utime
+				}
 			}
 		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			_res, pages = constructResult(a, o)
-			res += _res
+
+		if len(a) > 0 {
+			res, pages := constructResult(a, o)
+
+			return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
 		}
+
+		text := fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
+
+		utime, a, ips4, ips6, errMsg := refSearch(c, s)
+		if errMsg != "" {
+			return errMsg + "\n", nil
+		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		if len(a) == 0 {
+			return text + printUpToDate(oldest), nil
+		}
+
+		text += "\n\U0001f525 но может быть ограничен по IP-адресу:\n"
+		for _, ip := range ips4 {
+			text += fmt.Sprintf("    %s\n", ip)
+		}
+		for _, ip := range ips6 {
+			text += fmt.Sprintf("    %s\n", ip)
+		}
+
+		if len(a) > 0 {
+			res, pages := constructResult(a, o)
+
+			return fmt.Sprintf("%s\n%s\n", text, res), pages
+		}
+	case errParseURL == nil:
+		fmt.Fprintln(os.Stderr, "**** mainSearch: URL")
+
+		utime, a, errMsg := searchURL(c, parsedURL.String())
+		if errMsg != "" {
+			return errMsg + "\n", nil
+		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		switch parsedURL.Scheme {
+		case "http":
+			parsedURL.Scheme = "https"
+			utime, a2, errMsg := searchURL(c, parsedURL.String())
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
+			if len(a2) > 0 {
+				a = append(a, a2...)
+
+				if utime < oldest {
+					oldest = utime
+				}
+			}
+		case "https":
+			parsedURL.Scheme = "http"
+			utime, a2, errMsg := searchURL(c, parsedURL.String())
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
+			if len(a2) > 0 {
+				a = append(a, a2...)
+
+				if utime < oldest {
+					oldest = utime
+				}
+			}
+
+		}
+
+		if len(a) == 0 {
+			return fmt.Sprintf("\u2705 URL %s *не заблокирован*\n%s", Sanitize(s), printUpToDate(oldest)), nil
+		}
+
+		res, pages := constructResult(a, o)
+
+		return fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
+
 	default:
-		utime, a, err = searchURL(c, s)
-		if err == nil {
+		fmt.Fprintln(os.Stderr, "**** mainSearch: default")
+
+		utime, a, errMsg := searchURL(c, s)
+		if errMsg != "" {
+			return errMsg + "\n", nil
+		}
+
+		if utime < oldest {
+			oldest = utime
+		}
+
+		utime, a2, errMsg := searchDomain(c, s)
+		if errMsg != "" {
+			return errMsg + "\n", nil
+		}
+
+		if len(a2) > 0 {
+			a = append(a, a2...)
+
 			if utime < oldest {
 				oldest = utime
 			}
-			utime, a2, err = searchDomain(c, s)
-			if err == nil {
-				if utime < oldest {
-					oldest = utime
-				}
-				if len(a2) > 0 {
-					a = append(a, a2...)
-				}
-			}
 		}
-		if err != nil {
-			res = err.Error() + "\n"
-		} else {
-			if len(a) > 0 {
-				res = fmt.Sprintf("\U0001f525 URL %s *заблокирован*\n\n", Sanitize(s))
-				_res, pages = constructResult(a, o)
-				res += _res
-			} else {
-				res = fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n", s)
-				res += printUpToDate(oldest)
-			}
+
+		if len(a) == 0 {
+			return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. %s\n%s", s, printUpToDate(oldest)), nil
 		}
+
+		res, pages := constructResult(a, o)
+
+		return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
 	}
-	return
+
+	return "ффф", nil // unreachable code (but statickcheck doesn't know it)
 }
