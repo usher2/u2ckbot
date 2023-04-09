@@ -13,6 +13,7 @@ import (
 
 	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
+	"golang.org/x/net/publicsuffix"
 )
 
 const (
@@ -399,7 +400,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 	case isDomainName(domain):
 		fmt.Fprintln(os.Stderr, "**** mainSearch: domain")
 
-		utime, a, errMsg := searchDomain(c, s)
+		utime, a, errMsg := searchDomain(c, domain)
 		if errMsg != "" {
 			return errMsg + "\n", nil
 		}
@@ -410,7 +411,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 
 		switch {
 		case strings.HasPrefix(s, "www."):
-			utime, a2, errMsg := searchDomain(c, s[4:])
+			utime, a2, errMsg := searchDomain(c, domain[4:])
 			if errMsg != "" {
 				return errMsg + "\n", nil
 			}
@@ -423,7 +424,23 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 				}
 			}
 		default:
-			utime, a2, errMsg := searchDomain(c, "www."+s)
+			utime, a2, errMsg := searchDomain(c, "www."+domain)
+			if errMsg != "" {
+				return errMsg + "\n", nil
+			}
+
+			if len(a2) > 0 {
+				a = append(a, a2...)
+
+				if utime < oldest {
+					oldest = utime
+				}
+			}
+		}
+
+		parentDomain, _ := publicsuffix.PublicSuffix(domain)
+		if parentDomain != domain {
+			utime, a2, errMsg := searchDomain(c, parentDomain)
 			if errMsg != "" {
 				return errMsg + "\n", nil
 			}
@@ -445,7 +462,7 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 
 		text := fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
 
-		utime, a, ips4, ips6, errMsg := refSearch(c, s)
+		utime, a, ips4, ips6, errMsg := refSearch(c, domain)
 		if errMsg != "" {
 			return errMsg + "\n", nil
 		}
