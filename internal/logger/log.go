@@ -1,10 +1,11 @@
-package main
+package logger
 
 import (
 	"io"
 	"log"
 )
 
+// LogLevels
 var (
 	Debug   *log.Logger
 	Info    *log.Logger
@@ -12,7 +13,7 @@ var (
 	Error   *log.Logger
 )
 
-func logInit(debugHandle io.Writer, infoHandle io.Writer, warningHandle io.Writer, errorHandle io.Writer) {
+func LogInit(debugHandle io.Writer, infoHandle io.Writer, warningHandle io.Writer, errorHandle io.Writer) {
 	Debug = log.New(debugHandle, "TRACE: ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
 	Info = log.New(infoHandle, "INFO: ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)
 	Warning = log.New(warningHandle, "WARNING: ", log.Ldate|log.Ltime|log.LUTC|log.Lshortfile)

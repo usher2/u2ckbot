@@ -1,20 +1,5 @@
 package main
 
-func validOptionalPort(port string) bool {
-	if port == "" {
-		return true
-	}
-	if port[0] != ':' {
-		return false
-	}
-	for _, b := range port[1:] {
-		if b < '0' || b > '9' {
-			return false
-		}
-	}
-	return true
-}
-
 func isDomainName(s string) bool {
 	// See RFC 1035, RFC 3696.
 	// Presentation format has dots before every label except the first, and the

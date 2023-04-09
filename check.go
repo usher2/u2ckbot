@@ -10,59 +10,60 @@ import (
 	"strings"
 	"time"
 
+	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
 func Ping(c pb.CheckClient) string {
-	Info.Printf("Looking for Ping\n")
+	logger.Info.Printf("Looking for Ping\n")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.Ping(ctx, &pb.PingRequest{Ping: "ping"})
 	if err != nil {
-		Debug.Printf("%v.Ping(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.Ping(_) = _, %v\n", c, err)
 		return "\U00002620 Что-то пошло не так! Повторите попытку позже\n"
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return fmt.Sprintf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return fmt.Sprintf("\U0001f919 *%s*%s", r.Pong, printUpToDate(r.RegistryUpdateTime))
 }
 
 func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for content: #%d\n", id)
+	logger.Info.Printf("Looking for content: #%d\n", id)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchID(ctx, &pb.IDRequest{Query: int32(id)})
 	if err != nil {
-		Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchContent(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
 func searchIP4(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for %s\n", ip)
+	logger.Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchIP4(ctx, &pb.IP4Request{Query: parseIp4(ip)})
 	if err != nil {
-		Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchIP4(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Try again later: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
 func searchIP6(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for %s\n", ip)
+	logger.Info.Printf("Looking for %s\n", ip)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	ip6 := net.ParseIP(ip)
@@ -71,31 +72,31 @@ func searchIP6(c pb.CheckClient, ip string) (int64, []*pb.Content, error) {
 	}
 	r, err := c.SearchIP6(ctx, &pb.IP6Request{Query: ip6})
 	if err != nil {
-		Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchIP6(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
 func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, error) {
-	_url := NormalizeUrl(u)
+	_url := NormalizeURL(u)
 	if _url != u {
 		fmt.Printf("Input was %s\n", u)
 	}
-	Info.Printf("Looking for %s\n", _url)
+	logger.Info.Printf("Looking for %s\n", _url)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	r, err := c.SearchURL(ctx, &pb.URLRequest{Query: _url})
 	if err != nil {
-		Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchURL(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
@@ -103,32 +104,32 @@ func searchURL(c pb.CheckClient, u string) (int64, []*pb.Content, error) {
 
 func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, error) {
 	domain := NormalizeDomain(s)
-	Info.Printf("Looking for %s\n", domain)
+	logger.Info.Printf("Looking for %s\n", domain)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	r, err := c.SearchDomain(ctx, &pb.DomainRequest{Query: domain})
 	if err != nil {
-		Debug.Printf("%v.SearchDomain(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchDomain(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil
 }
 
 func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, error) {
-	Info.Printf("Looking for &%d\n", decision)
+	logger.Info.Printf("Looking for &%d\n", decision)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	r, err := c.SearchDecision(ctx, &pb.DecisionRequest{Query: decision})
 	if err != nil {
-		Debug.Printf("%v.SearchDecision(_) = _, %v\n", c, err)
+		logger.Debug.Printf("%v.SearchDecision(_) = _, %v\n", c, err)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\U00002620 Что-то пошло не так! Повторите попытку позже\n")
 	}
 	if r.Error != "" {
-		Debug.Printf("ERROR: %s\n", r.Error)
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
 		return MAX_TIMESTAMP, nil, fmt.Errorf("\u23f3 Повторите попытку позже: %s\n", r.Error)
 	}
 	return r.RegistryUpdateTime, r.Results[:], nil

@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
@@ -126,7 +127,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Упс!!! %s\n", err)
+			logger.Error.Printf("Упс!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -446,7 +447,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 		content := TContent{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
-			Error.Printf("Упс!!! %s\n", err)
+			logger.Error.Printf("Упс!!! %s\n", err)
 			continue
 		}
 		if packet.RegistryUpdateTime < oldest {
@@ -514,7 +515,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 	}
 	if len(a) > PRINT_LIMIT {
 		pages = append(pages, TPagination{OFFSET_CONTENT, len(a)})
-		//rest := cnt - PRINT_LIMIT
+		// rest := cnt - PRINT_LIMIT
 		res += fmt.Sprintf("\u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+PRINT_LIMIT, len(a))
 		/*if cbu > 0 && cbu < rest {
 			res += fmt.Sprintf(" url=%d", cbu)

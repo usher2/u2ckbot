@@ -4,7 +4,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -12,8 +12,10 @@ import (
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const MAXMSGSIZE = 1024 * 1024 * 128
@@ -72,19 +74,19 @@ func main() {
 	logLevel := config.GetString("LogLevel", "Debug")
 	switch logLevel {
 	case "Info":
-		logInit(ioutil.Discard, os.Stdout, os.Stderr, os.Stderr)
+		logger.LogInit(io.Discard, os.Stdout, os.Stderr, os.Stderr)
 	case "Warning":
-		logInit(ioutil.Discard, ioutil.Discard, os.Stderr, os.Stderr)
+		logger.LogInit(io.Discard, io.Discard, os.Stderr, os.Stderr)
 	case "Error":
-		logInit(ioutil.Discard, ioutil.Discard, ioutil.Discard, os.Stderr)
+		logger.LogInit(io.Discard, io.Discard, io.Discard, os.Stderr)
 	default:
-		logInit(os.Stderr, os.Stdout, os.Stderr, os.Stderr)
+		logger.LogInit(os.Stderr, os.Stdout, os.Stderr, os.Stderr)
 	}
-	//gRPC
+	// gRPC
 	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
+	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	opts = append(opts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(MAXMSGSIZE)))
-	//opts = append(opts, grpc.WithBlock())
+	// opts = append(opts, grpc.WithBlock())
 	conn, err := grpc.Dial(config.GetString("CkDumpServer", "localhost:50001"), opts...)
 	if err != nil {
 		fmt.Printf("fail to dial: %v", err)

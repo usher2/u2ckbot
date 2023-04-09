@@ -9,77 +9,75 @@ import (
 
 	tb "github.com/go-telegram-bot-api/telegram-bot-api"
 
+	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
 )
 
 func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel) {
-	for {
-		select {
-		case update := <-updatesChan:
-			switch {
-			case update.Message != nil: // ignore any non-Message Updates
-				if update.Message.Text != "" {
-					if update.Message.Chat.Type == "private" ||
-						(update.Message.ReplyToMessage == nil &&
-							update.Message.ForwardFromMessageID == 0) {
-						var uname string
-						// who writing
-						if update.Message.From != nil {
-							uname = update.Message.From.UserName
-						}
-						// chat/dialog
-						chat := update.Message.Chat
-						go Talks(c, bot, uname, chat, "", 0, "", update.Message.Text)
-					}
-				}
-			case update.CallbackQuery != nil:
-				var (
-					uname string
-					req   string
-				)
-				// who writing
-				if update.CallbackQuery.From != nil {
-					uname = update.CallbackQuery.From.UserName
-				}
-				// chat/dialog
-				var chat *tb.Chat
-				if update.CallbackQuery.Message != nil {
-					chat = update.CallbackQuery.Message.Chat
-					i := strings.IndexByte(update.CallbackQuery.Message.Text, '\n')
-					if i > 0 {
-						switch {
-						case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
-							strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован"):
-							req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
-						case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
-							strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_"):
-							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
-							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
-							if j2 == -1 {
-								req = update.CallbackQuery.Message.Text[j1:]
-							} else {
-								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
-							}
-						case strings.Contains(update.CallbackQuery.Message.Text[:i], "/n_"):
-							j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
-							j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
-							if j2 != -1 {
-								req = update.CallbackQuery.Message.Text[j1 : j1+j2]
-							}
-						}
-					}
-				}
-				go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
-				go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
-			case update.InlineQuery != nil:
-				if update.InlineQuery.Query != "" {
+	for update := range updatesChan {
+		switch {
+		case update.Message != nil: // ignore any non-Message Updates
+			if update.Message.Text != "" {
+				if update.Message.Chat.Type == "private" ||
+					(update.Message.ReplyToMessage == nil &&
+						update.Message.ForwardFromMessageID == 0) {
 					var uname string
 					// who writing
-					if update.InlineQuery.From != nil {
-						uname = update.InlineQuery.From.UserName
+					if update.Message.From != nil {
+						uname = update.Message.From.UserName
 					}
-					go Talks(c, bot, uname, nil, update.InlineQuery.ID, 0, "", update.InlineQuery.Query)
+					// chat/dialog
+					chat := update.Message.Chat
+					go Talks(c, bot, uname, chat, "", 0, "", update.Message.Text)
 				}
+			}
+		case update.CallbackQuery != nil:
+			var (
+				uname string
+				req   string
+			)
+			// who writing
+			if update.CallbackQuery.From != nil {
+				uname = update.CallbackQuery.From.UserName
+			}
+			// chat/dialog
+			var chat *tb.Chat
+			if update.CallbackQuery.Message != nil {
+				chat = update.CallbackQuery.Message.Chat
+				i := strings.IndexByte(update.CallbackQuery.Message.Text, '\n')
+				if i > 0 {
+					switch {
+					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
+						strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован"):
+						req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
+					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
+						strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_"):
+						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
+						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+						if j2 == -1 {
+							req = update.CallbackQuery.Message.Text[j1:]
+						} else {
+							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						}
+					case strings.Contains(update.CallbackQuery.Message.Text[:i], "/n_"):
+						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/n_")
+						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+						if j2 != -1 {
+							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						}
+					}
+				}
+			}
+			go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
+			go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
+		case update.InlineQuery != nil:
+			if update.InlineQuery.Query != "" {
+				var uname string
+				// who writing
+				if update.InlineQuery.From != nil {
+					uname = update.InlineQuery.From.UserName
+				}
+				go Talks(c, bot, uname, nil, update.InlineQuery.ID, 0, "", update.InlineQuery.Query)
 			}
 		}
 	}
@@ -193,7 +191,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			text += "--- \n" + DonateFooter
 			noAdCount = 0
 		} else {
-			//text += Footer
+			// text += Footer
 			noAdCount++
 		}
 		if messageId > 0 {
@@ -206,7 +204,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			}
 			_, err := bot.Send(msg)
 			if err != nil {
-				Warning.Printf("Error sending message: %s\n", err.Error())
+				logger.Warning.Printf("Error sending message: %s\n", err.Error())
 			}
 		} else {
 			msg := tb.NewMessage(chat.ID, text)
@@ -218,7 +216,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			}
 			_, err := bot.Send(msg)
 			if err != nil {
-				Warning.Printf("Error sending message: %s\n", err.Error())
+				logger.Warning.Printf("Error sending message: %s\n", err.Error())
 			}
 		}
 	} else if inlineId != "" {
@@ -237,7 +235,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			Results:       []interface{}{article},
 		}
 		if _, err := bot.AnswerInlineQuery(inlineConf); err != nil {
-			Warning.Printf("Error sending answer: %s\n", err.Error())
+			logger.Warning.Printf("Error sending answer: %s\n", err.Error())
 		}
 	}
 }
@@ -256,7 +254,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			offset.Count, _ = strconv.Atoi(callbackData[i+1:])
 		}
 	}
-	//log.Printf("[%s] %d %s", UserName, ChatID, Text)
+	// log.Printf("[%s] %d %s", UserName, ChatID, Text)
 	if i := strings.IndexByte(text, '\n'); i != -1 {
 		text = strings.Trim(text[:i], " ")
 	}
@@ -303,7 +301,7 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 	}
 	sendMessage(bot, chat, inlineId, messageId, reply, offset, pages)
 
-	//regex, _ := regexp.Compile(`^/([A-Za-z\_\#\&]+)\s*(.*)$`)
-	//matches := regex.FindStringSubmatch(text)
-	//Debug.Println(pages)
+	// regex, _ := regexp.Compile(`^/([A-Za-z\_\#\&]+)\s*(.*)$`)
+	// matches := regex.FindStringSubmatch(text)
+	// Debug.Println(pages)
 }

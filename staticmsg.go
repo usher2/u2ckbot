@@ -36,13 +36,13 @@ const (
 		"\u274c блокировка по IP адресу. Провайдеры ОБЯЗАНЫ блокировать ВЕСЬ IP адрес или подсеть\n"
 
 	DonateMessage string = "\U00002b50 *Традиционные способы:*\n" +
+		"Patreon: https://www.patreon.com/usher2\n" +
 		"Paypal: https://www.paypal.me/schorsx\n" +
 		"ЮMoney (бывшие ЯДеньги): https://sobe.ru/na/m2i2s077M0g2\n" +
 		"\U0001f3f5 *Сделать меня криптомагнатом:*\n" +
 		"BTC: `18YFeAV12ktBxv9hy4wSiSCUXXAh5VR7gE`\n" +
 		"LTC: `LVXP51M8MrzaEQi6eBEGWpTSwckybqHU5s`\n" +
 		"ETH: `0xba53cebd99157bf412a6bb91165e7dff29abd0a2`\n" +
-		"ZEC: `t1McmUhzdsauoXpiu2yCjNpnLKGGH225aAW`\n" +
 		"BCH: `1FiXmPZ6eecHVaZbgdadAuzQLU9kqdSzVN`\n" +
 		"ETC: `0xeb990a29d4f870b5fdbe331db90d9849ce3dae77`\n" +
 		"TON: `EQBrl8BNLWNVvmSCZDNexzoGQLIojnp4xNDT6Wf4AFX4S\\_57`\n\n"

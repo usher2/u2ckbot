@@ -2,14 +2,18 @@ package main
 
 import (
 	"fmt"
-	"github.com/miekg/dns"
 	"math/rand"
 	"strings"
 	"time"
+
+	"github.com/miekg/dns"
+	"github.com/usher2/u2ckbot/internal/logger"
 )
 
-const ATTEMPTS = 1
-const TIMEOUT = 5
+const (
+	ATTEMPTS = 1
+	TIMEOUT  = 5
+)
 
 func appendIfMissing(slice []string, s string) []string {
 	for _, ele := range slice {
@@ -26,7 +30,7 @@ func getIP4(domain string) (res []string) {
 		case dns.RcodeSuccess:
 			if len(r.Answer) > 0 {
 				if len(r.Answer) > 99 {
-					Warning.Printf("Internal error, for %s, Answer too big: %d\n", domain, len(r.Answer))
+					logger.Warning.Printf("Internal error, for %s, Answer too big: %d\n", domain, len(r.Answer))
 				}
 				cnt := 0
 				for _, rr := range r.Answer {
@@ -43,15 +47,15 @@ func getIP4(domain string) (res []string) {
 							res = appendIfMissing(res, ele)
 						}
 					case dns.TypeRRSIG:
-						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
+						logger.Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
 					default:
-						Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
+						logger.Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
 					}
 				}
 			}
 		}
 	} else {
-		Error.Printf("Type A. Internal error (%s): %s\n", domain, err.Error())
+		logger.Error.Printf("Type A. Internal error (%s): %s\n", domain, err.Error())
 	}
 
 	return
@@ -63,7 +67,7 @@ func getIP6(domain string) (res []string) {
 		case dns.RcodeSuccess:
 			if len(r.Answer) > 0 {
 				if len(r.Answer) > 99 {
-					Warning.Printf("Internal error, for %s, Answer too big: %d\n", domain, len(r.Answer))
+					logger.Warning.Printf("Internal error, for %s, Answer too big: %d\n", domain, len(r.Answer))
 				}
 				cnt := 0
 				for _, rr := range r.Answer {
@@ -80,15 +84,15 @@ func getIP6(domain string) (res []string) {
 							res = appendIfMissing(res, ele)
 						}
 					case dns.TypeRRSIG:
-						Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
+						logger.Debug.Printf("Warning: RRSIG (%s): %#v", domain, r.MsgHdr)
 					default:
-						Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
+						logger.Debug.Printf("Warning: unknown answer (%s): %s\n", domain, rr.String())
 					}
 				}
 			}
 		}
 	} else {
-		Error.Printf("Type AAAA. Internal error (%s): %s\n", domain, err.Error())
+		logger.Error.Printf("Type AAAA. Internal error (%s): %s\n", domain, err.Error())
 	}
 	return
 }
@@ -107,7 +111,7 @@ func GetRR(domain string, nameservers []string, qtype uint16) (r *dns.Msg, rtt t
 			nameserver := nameservers[i]
 			m := &dns.Msg{
 				MsgHdr: dns.MsgHdr{
-					//Authoritative: true,
+					// Authoritative: true,
 					AuthenticatedData: true,
 					CheckingDisabled:  true,
 					RecursionDesired:  true,
@@ -177,8 +181,8 @@ func lookup(m *dns.Msg, nameserver string, fallback bool) (r *dns.Msg, rtt time.
 		if r.Id != m.Id {
 			err = fmt.Errorf("%s", "Id mismatch")
 		}
-		//fmt.Printf("%v", r)
-		//fmt.Printf("\n;; query time: %.3d µs, server: %s(%s), size: %d bytes\n", rtt/1e3, nameserver, c.Net, r.Len())
+		// fmt.Printf("%v", r)
+		// fmt.Printf("\n;; query time: %.3d µs, server: %s(%s), size: %d bytes\n", rtt/1e3, nameserver, c.Net, r.Len())
 	}
 	if err != nil && r != nil {
 		if m.Response || m.Opcode == dns.OpcodeQuery {
