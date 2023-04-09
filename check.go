@@ -577,6 +577,4 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 
 		return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
 	}
-
-	return "ффф", nil // unreachable code (but statickcheck doesn't know it)
 }
