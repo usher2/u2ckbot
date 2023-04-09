@@ -438,6 +438,14 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 			}
 		}
 
+		if len(a) > 0 {
+			res, pages := constructResult(a, o)
+
+			return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
+		}
+
+		text := fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
+
 		parentDomain, _ := publicsuffix.PublicSuffix(domain)
 		if parentDomain != domain {
 			utime, a2, errMsg := searchDomain(c, parentDomain)
@@ -451,43 +459,39 @@ func mainSearch(c pb.CheckClient, s string, o TPagination) (string, []TPaginatio
 				if utime < oldest {
 					oldest = utime
 				}
+
+				text += "\n\U0001f525 но может быть ограничен по базовому домену:\n"
 			}
 		}
 
-		if len(a) > 0 {
-			res, pages := constructResult(a, o)
-
-			return fmt.Sprintf("\U0001f525 %s *заблокирован*\n\n%s\n", Sanitize(s), res), pages
-		}
-
-		text := fmt.Sprintf("\u2705 %s *не заблокирован*\n", Sanitize(s))
-
-		utime, a, ips4, ips6, errMsg := refSearch(c, domain)
+		utime, a2, ips4, ips6, errMsg := refSearch(c, domain)
 		if errMsg != "" {
 			return errMsg + "\n", nil
 		}
 
-		if utime < oldest {
-			oldest = utime
+		if len(a2) > 0 {
+			a = append(a, a2...)
+
+			if utime < oldest {
+				oldest = utime
+			}
+
+			text += "\n\U0001f525 но может быть ограничен по IP-адресу:\n"
+			for _, ip := range ips4 {
+				text += fmt.Sprintf("    %s\n", ip)
+			}
+			for _, ip := range ips6 {
+				text += fmt.Sprintf("    %s\n", ip)
+			}
 		}
 
 		if len(a) == 0 {
 			return text + printUpToDate(oldest), nil
 		}
 
-		text += "\n\U0001f525 но может быть ограничен по IP-адресу:\n"
-		for _, ip := range ips4 {
-			text += fmt.Sprintf("    %s\n", ip)
-		}
-		for _, ip := range ips6 {
-			text += fmt.Sprintf("    %s\n", ip)
-		}
+		res, pages := constructResult(a, o)
 
-		if len(a) > 0 {
-			res, pages := constructResult(a, o)
-
-			return fmt.Sprintf("%s\n%s\n", text, res), pages
-		}
+		return fmt.Sprintf("%s\n%s\n", text, res), pages
 	case errParseURL == nil:
 		fmt.Fprintln(os.Stderr, "**** mainSearch: URL")
 
