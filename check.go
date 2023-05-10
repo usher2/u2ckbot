@@ -70,6 +70,28 @@ func searchID(c pb.CheckClient, id int) (int64, []*pb.Content, string) {
 	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
+func searchEntryType(c pb.CheckClient, et int) (int64, []*pb.Content, string) {
+	logger.Info.Printf("Looking for entry type: #%d\n", et)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	r, err := c.SearchEntryType(ctx, &pb.IDRequest{Query: int32(et)})
+	if err != nil {
+		logger.Debug.Printf("%v.SearchEntryType(_) = _, %v\n", c, err)
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
+	}
+
+	if r.Error != "" {
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
+	}
+
+	return r.RegistryUpdateTime, r.Results[:], ""
+}
+
 func searchIP4(c pb.CheckClient, ip netip.Addr) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for %s\n", ip)
 
@@ -165,6 +187,30 @@ func searchDomain(c pb.CheckClient, s string) (int64, []*pb.Content, string) {
 	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
+func searchDomainSuffix(c pb.CheckClient, s string) (int64, []*pb.Content, string) {
+	domain := NormalizeDomain(s)
+
+	logger.Info.Printf("Looking for suffix %s\n", domain)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	r, err := c.SearchDomainSuffix(ctx, &pb.DomainRequest{Query: domain})
+	if err != nil {
+		logger.Debug.Printf("%v.SearchDomainSuffix(_) = _, %v\n", c, err)
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
+	}
+
+	if r.Error != "" {
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
+	}
+
+	return r.RegistryUpdateTime, r.Results[:], ""
+}
+
 func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for &%d\n", decision)
 
@@ -235,6 +281,62 @@ func refSearch(c pb.CheckClient, s string) (int64, []*pb.Content, []string, []st
 	}
 
 	return oldest, a, ips4, ips6, ""
+}
+
+func domainSuffixSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
+	var oldestRecordTimestamp int64 = MAX_TIMESTAMP
+
+	if len(s) == 0 {
+		return "\U0001f914 Что имелось ввиду?..\n", nil
+	}
+
+	recordUpdateTimestamp, a, errMsg := searchDomainSuffix(c, s)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if recordUpdateTimestamp < oldestRecordTimestamp {
+		oldestRecordTimestamp = recordUpdateTimestamp
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", s, printUpToDate(oldestRecordTimestamp)), nil
+	}
+
+	return constructContentResult(a, o)
+}
+
+// entryTypeSearch - searches for entry type. Returns results and errors.
+func entryTypeSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
+	var oldestRecordTimestamp int64 = MAX_TIMESTAMP
+
+	if len(s) == 0 {
+		return "\U0001f914 Что имелось ввиду?..\n", nil
+	}
+
+	et, err := strconv.Atoi(s)
+	if err != nil {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /et\\_%s: %s\n", s, err.Error()), nil
+	}
+
+	if et == 0 {
+		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /et\\_%s\n", s), nil
+	}
+
+	recordUpdateTimestamp, a, errMsg := searchEntryType(c, et)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if recordUpdateTimestamp < oldestRecordTimestamp {
+		oldestRecordTimestamp = recordUpdateTimestamp
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", s, printUpToDate(oldestRecordTimestamp)), nil
+	}
+
+	return constructContentResult(a, o)
 }
 
 // numberSearch - searches for a internal Roscomnadzor record number.

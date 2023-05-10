@@ -271,10 +271,20 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		reply = "Приветствую тебя, " + Sanitize(uname) + "!\n"
 	case text == "/ping":
 		reply = Ping(c)
-	case text == "/ck" || text == "/check":
+	case text == "/ck" || text == "/check" || text == "/x":
 		reply = HelpMessage
 	case strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check "):
 		reply, pages = mainSearch(c, strings.TrimPrefix(strings.TrimPrefix(text, "/ck "), "/check "), offset)
+	case strings.HasPrefix(text, "/x "):
+		reply, pages = domainSuffixSearch(c, strings.TrimPrefix(text, "/x "), offset)
+	case strings.HasPrefix(text, "/e_") || strings.HasPrefix(text, "%"):
+		args := ""
+		if strings.HasPrefix(text, "/e_") {
+			args = strings.TrimPrefix(text, "/e_")
+		} else if strings.HasPrefix(text, "%") {
+			args = strings.TrimPrefix(text, "%")
+		}
+		reply, pages = entryTypeSearch(c, args, offset)
 	case strings.HasPrefix(text, "/n_") || strings.HasPrefix(text, "#"):
 		args := ""
 		if strings.HasPrefix(text, "/n_") {

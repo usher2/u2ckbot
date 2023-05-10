@@ -5,11 +5,15 @@ const (
 		"/helpen - This message\n" +
 		"/help - руководство на русском\n" +
 		"/ck <website or IP>\n/check <website or IP> - check something - IP-address or Domain or URL\n" +
+		"/x <domain> - find base domain (public suffix) and check it and subdomains\n" +
 		"/donate - Information about donation methods\n\n" +
 		"*Simple usage*\n\n" +
 		"Send an IP-address or Domain or URL to the bot for restriction checking \n\n" +
 		"Send a record ID (ussualy started with #) to the bot for details\n\n" +
 		"Or use /ck or /check commands in group chats\n\n" +
+		"/n\\_<NUMBER> - show details for record with this number\n\n" +
+		"/d\\_<ID> - show list of records for this desicion\n\n" +
+		"/e\\_<ID> - show list of records for this entry type\n\n" +
 		"*Legend*\n\n" +
 		"\U000026d4 URL blocking type. It's default blockig type. Providers MUST block ONLY plain HTTP traffic with certain URL\n" +
 		"\U0001f4db HTTPS blocking type. It's not standart blocking type. It's URL blocking type but with HTTPS scheme. Providers MUST block domain name from URL by SNI or by DNS interception\n" +
@@ -21,6 +25,7 @@ const (
 		"/helpen - manual in english\n" +
 		"/help - это сообщение\n" +
 		"/ck <САЙТ или IP-адрес>\n/check <САЙТ или IP-адрес> - проверить IP адрес, домен или URL\n" +
+		"/x <домен> - найти базовый домен (public suffix) и проверить его на вхождение его и поддоменов\n" +
 		"/donate - получить информацию о способах пожертвований\n\n" +
 		"*Основные возможности*\n\n" +
 		"Отправьте IP-адрес или домен, или URL боту для проверки наличия их в списке блокировок\n\n" +
@@ -28,6 +33,7 @@ const (
 		"Или воспользуйтесь командами /ck или /check в группах\n\n" +
 		"/n\\_<НОМЕР> - показывает подробную информацию о данном номере записи в реестре\n\n" +
 		"/d\\_<ИДЕНТИФИКАТОР> - показывает список записей в реестре по данному решению\n\n" +
+		"/e\\_<НОМЕР> - ищет блокировки с этим типом решений" +
 		"*Обозначения*\n\n" +
 		"\U000026d4 блокировка по URL. Тип блокировки по умолчанию. Провайдеры ОБЯЗАНЫ фильтровать ТОЛЬКО простой HTTP трафик на определённые URL\n" +
 		"\U0001f4db блокировка HTTPS. Неформальный тип блокировк. Это блокировка по URL с HTTPS схемой. Провайдеры ОБЯЗАНЫ блокировать трафик на домен из URL путем чтения SNI или путём перехвата DNS запросов\n" +
