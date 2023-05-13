@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"os"
 
-	tb "github.com/go-telegram-bot-api/telegram-bot-api"
+	tb "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
@@ -39,7 +39,7 @@ func GetBot(token, proxyUrl, loglevel string) *tb.BotAPI {
 			log.Panic("Proxy url invalid")
 		}
 		client := &http.Client{Transport: &http.Transport{Proxy: http.ProxyURL(_proxyUrl)}}
-		bot, err = tb.NewBotAPIWithClient(token, client)
+		bot, err = tb.NewBotAPIWithClient(token, tb.APIEndpoint, client)
 	} else {
 		bot, err = tb.NewBotAPI(token)
 	}
@@ -57,10 +57,8 @@ func GetBot(token, proxyUrl, loglevel string) *tb.BotAPI {
 func GetUpdatesChan(bot *tb.BotAPI) <-chan tb.Update {
 	c := tb.NewUpdate(0)
 	c.Timeout = 60
-	updates, err := bot.GetUpdatesChan(c)
-	if err != nil {
-		log.Panic(err)
-	}
+	updates := bot.GetUpdatesChan(c)
+
 	return updates
 }
 

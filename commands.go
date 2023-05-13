@@ -7,10 +7,17 @@ import (
 	"strconv"
 	"strings"
 
-	tb "github.com/go-telegram-bot-api/telegram-bot-api"
+	tb "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 
 	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
+)
+
+const (
+	BlockedPattern           = " заблокирован"
+	SuffixBlockedPattern     = " блокировки в базовом домене"
+	SuffixBlockedPatternPlus = " блокировки в базовом домене+"
+	EntryTypeBlockedPattern  = " решения"
 )
 
 func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel) {
@@ -48,8 +55,14 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 				if i > 0 {
 					switch {
 					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
-						strings.HasSuffix(update.CallbackQuery.Message.Text[:i], " заблокирован"):
-						req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), " заблокирован")
+						strings.HasSuffix(update.CallbackQuery.Message.Text[:i], SuffixBlockedPattern):
+						req = "/x " + strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), SuffixBlockedPattern)
+					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
+						strings.HasSuffix(update.CallbackQuery.Message.Text[:i], SuffixBlockedPatternPlus):
+						req = "/xx " + strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), SuffixBlockedPatternPlus)
+					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 ") &&
+						strings.HasSuffix(update.CallbackQuery.Message.Text[:i], BlockedPattern):
+						req = strings.TrimSuffix(strings.TrimPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f525 "), BlockedPattern)
 					case strings.HasPrefix(update.CallbackQuery.Message.Text[:i], "\U0001f4dc ") &&
 						strings.Contains(update.CallbackQuery.Message.Text[:i], "/d_"):
 						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/d_")
@@ -64,11 +77,23 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
 						if j2 != -1 {
 							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						} else {
+							req = update.CallbackQuery.Message.Text[j1:]
+						}
+					case strings.Contains(update.CallbackQuery.Message.Text[:i], "/e_"):
+						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/e_")
+						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+						if j2 != -1 {
+							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						} else {
+							req = update.CallbackQuery.Message.Text[j1:]
 						}
 					}
 				}
 			}
-			go bot.AnswerCallbackQuery(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
+
+			go bot.Request(tb.NewCallback(update.CallbackQuery.ID, "")) // for some reason
+
 			go Talks(c, bot, uname, chat, "", update.CallbackQuery.Message.MessageID, update.CallbackQuery.Data, req)
 		case update.InlineQuery != nil:
 			if update.InlineQuery.Query != "" {
@@ -85,7 +110,7 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 
 var noAdCount int = 0
 
-const NO_AD_NUMBER = 20
+const NO_AD_NUMBER = 5
 
 func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMarkup {
 	var (
@@ -187,7 +212,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 
 func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, text string, offset TPagination, pages []TPagination) {
 	if chat != nil {
-		if noAdCount >= NO_AD_NUMBER {
+		if noAdCount >= NO_AD_NUMBER || strings.Contains(text, "Сводная статистика по выгрузке") {
 			text += "--- \n" + DonateFooter
 			noAdCount = 0
 		} else {
@@ -234,7 +259,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			InlineQueryID: inlineId,
 			Results:       []interface{}{article},
 		}
-		if _, err := bot.AnswerInlineQuery(inlineConf); err != nil {
+		if _, err := bot.Request(inlineConf); err != nil {
 			logger.Warning.Printf("Error sending answer: %s\n", err.Error())
 		}
 	}
@@ -271,20 +296,16 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		reply = "Приветствую тебя, " + Sanitize(uname) + "!\n"
 	case text == "/ping":
 		reply = Ping(c)
+	case text == "/sum":
+		reply = Summarize(c)
 	case text == "/ck" || text == "/check" || text == "/x":
 		reply = HelpMessage
 	case strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check "):
 		reply, pages = mainSearch(c, strings.TrimPrefix(strings.TrimPrefix(text, "/ck "), "/check "), offset)
 	case strings.HasPrefix(text, "/x "):
-		reply, pages = domainSuffixSearch(c, strings.TrimPrefix(text, "/x "), offset)
-	case strings.HasPrefix(text, "/e_") || strings.HasPrefix(text, "%"):
-		args := ""
-		if strings.HasPrefix(text, "/e_") {
-			args = strings.TrimPrefix(text, "/e_")
-		} else if strings.HasPrefix(text, "%") {
-			args = strings.TrimPrefix(text, "%")
-		}
-		reply, pages = entryTypeSearch(c, args, offset)
+		reply, pages = domainSuffixSearch(c, strings.TrimPrefix(text, "/x "), offset, 1)
+	case strings.HasPrefix(text, "/xx "):
+		reply, pages = domainSuffixSearch(c, strings.TrimPrefix(text, "/xx "), offset, 2)
 	case strings.HasPrefix(text, "/n_") || strings.HasPrefix(text, "#"):
 		args := ""
 		if strings.HasPrefix(text, "/n_") {
@@ -301,6 +322,14 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			args = strings.TrimPrefix(text, "&")
 		}
 		reply, pages = decisionSearch(c, args, offset)
+	case strings.HasPrefix(text, "/e_") || strings.HasPrefix(text, "^"):
+		args := ""
+		if strings.HasPrefix(text, "/e_") {
+			args = strings.TrimPrefix(text, "/e_")
+		} else if strings.HasPrefix(text, "^") {
+			args = strings.TrimPrefix(text, "^")
+		}
+		reply, pages = entryTypeSearch(c, args, offset)
 	case strings.HasPrefix(text, "/"):
 		reply = "\U0001f523 iNJALID DEJICE\n"
 	default:

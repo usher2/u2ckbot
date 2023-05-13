@@ -57,6 +57,45 @@ type TReason struct {
 	Domain []string
 }
 
+var DecisionTypesDesc = map[string]string{
+	"15_1":   "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая",
+	"15_1_1": "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение",
+	"15_2":   "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание",
+	"15_3":   "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки",
+	"15_4":   "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ не молчи",
+	"15_6":   "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная",
+	"15_6_1": "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал",
+	"15_5":   "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные",
+	"15_8":   "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN",
+	"15_9":   "[ст. 15.9](http://www.consultant.ru/document/cons_doc_LAW_61798/31eb19e991d54b484ac546107c4db838b3631e9f/), сайт иноагента",
+}
+
+func DecisionTypeView(t string) string {
+	t = strings.ReplaceAll(strings.ReplaceAll(t, ".", "_"), "-", "_")
+
+	if val, ok := DecisionTypesDesc[t]; ok {
+		return val
+	}
+
+	return DecisionTypesDesc["15_1"]
+}
+
+var BlockTypesView = map[int32]string{
+	TBLOCK_URL:    "\U000026d4 (url) ",
+	TBLOCK_HTTPS:  "\U0001f4db (https) ",
+	TBLOCK_DOMAIN: "\U0001f6ab (domain) ",
+	TBLOCK_MASK:   "\U0001f506 (wildcard) ",
+	TBLOCK_IP:     "\u274c (ip) ",
+}
+
+func BlockTypeView(t int32) string {
+	if val, ok := BlockTypesView[t]; ok {
+		return val
+	}
+
+	return BlockTypesView[TBLOCK_URL]
+}
+
 func printUpToDate(t int64) string {
 	var r rune
 	d := time.Now().Unix() - t
@@ -93,78 +132,80 @@ func Decision2base32(s string) string {
 	return Uint64ToBase32(h64.Sum64())
 }
 
-func constructBasis(content *TContent) (res string) {
-	basis := "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая"
+func constructBasis(entryType int32, org string) string {
 	switch {
-	case content.EntryType == 1 && content.Decision.Org == "Генпрокуратура":
-		basis = "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение"
-	case content.EntryType == 2:
-		basis = "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание"
-	case content.EntryType == 3:
-		basis = "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки"
-	case content.EntryType == 4:
-		basis = "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ не молчи"
-	case content.EntryType == 5 && content.Decision.Org == "Мосгорсуд":
-		basis = "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная"
-	case content.EntryType == 5 && content.Decision.Org == "Минцифра":
-		basis = "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал"
-	case content.EntryType == 6:
-		basis = "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные"
-	case content.EntryType == 7:
-		basis = "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN"
-	case content.EntryType == 8:
-		basis = "[ст. 15.9](http://www.consultant.ru/document/cons_doc_LAW_61798/31eb19e991d54b484ac546107c4db838b3631e9f/), сайт иноагента"
+	case entryType == 1 && (org == "Генпрокуратура" || org == ""):
+		return DecisionTypeView("15.1-1")
+	case entryType == 2:
+		return DecisionTypeView("15.2")
+	case entryType == 3:
+		return DecisionTypeView("15.3")
+	case entryType == 4:
+		return DecisionTypeView("15.4")
+	case entryType == 5 && org == "Мосгорсуд":
+		return DecisionTypeView("15.6")
+	case entryType == 5 && (org == "Минцифра" || org == "Минкомсвязь"):
+		return DecisionTypeView("15.6-1")
+	case entryType == 6:
+		return DecisionTypeView("15.5")
+	case entryType == 7:
+		return DecisionTypeView("15.8")
+	case entryType == 8:
+		return DecisionTypeView("15.9")
 	}
-	return basis
+
+	return DecisionTypeView("15.1")
 }
 
 func constructContentResult(a []*pb.Content, o TPagination) (res string, pages []TPagination) {
 	var oldest int64 = MAX_TIMESTAMP
+
 	if len(a) == 0 {
 		return
 	}
+
 	for _, packet := range a {
-		content := TContent{}
-		err := json.Unmarshal(packet.Pack, &content)
-		if err != nil {
+		content := Content{}
+
+		if err := json.Unmarshal(packet.Pack, &content); err != nil {
 			logger.Error.Printf("Упс!!! %s\n", err)
+
 			continue
 		}
+
 		if packet.RegistryUpdateTime < oldest {
 			oldest = packet.RegistryUpdateTime
 		}
-		bt := ""
-		switch packet.BlockType {
-		case TBLOCK_URL:
-			bt = "\U000026d4 (url) "
-		case TBLOCK_HTTPS:
-			bt = "\U0001f4db (https) "
-		case TBLOCK_DOMAIN:
-			bt = "\U0001f6ab (domain) "
-		case TBLOCK_MASK:
-			bt = "\U0001f506 (wildcard) "
-		case TBLOCK_IP:
-			bt = "\u274c (ip) "
-		}
-		dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.Id, dcs, Decision2base32(dcs))
-		res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
+
+		blockType := BlockTypeView(packet.BlockType)
+
+		descisionString := fmt.Sprintf("%s %s %s", printOrg(content.Decision.Org), content.Decision.Number, content.Decision.Date)
+		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", blockType, content.ID, descisionString, Decision2base32(descisionString))
+		res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
 		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
-		if len(content.Subnet4)+len(content.Subnet6) > 0 && packet.BlockType == TBLOCK_IP {
+
+		if len(content.SubnetIPv4)+len(content.SubnetIPv6) > 0 && packet.BlockType == TBLOCK_IP {
 			res += "\U0001f4a5\U0001f4a5\U0001f4a5 Решение о «ковровой» блокировке!\n"
 		}
+
 		res += "\n"
+
 		cnt := 0
+
 		for i, d := range content.Domain {
 			if o.Tag == OFFSET_DOMAIN && i < o.Count {
 				continue
 			}
+
 			if cnt >= PRINT_LIMIT {
 				break
 			}
+
 			res += fmt.Sprintf("  domain: %s\n", Sanitize(d.Domain))
+
 			cnt++
 		}
+
 		l := len(content.Domain)
 		if l > PRINT_LIMIT {
 			offset := 0
@@ -178,24 +219,28 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 					offset = o.Count
 				}
 			}
+
 			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
+
 			pages = append(pages, TPagination{OFFSET_DOMAIN, l})
 		}
+
 		if cnt > 0 {
 			res += "\n"
 		}
+
 		cnt = 0
-		for i, u := range content.Url {
+		for i, u := range content.URL {
 			if o.Tag == OFFSET_URL && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
 				break
 			}
-			res += fmt.Sprintf("  url: %s\n", Sanitize(u.Url))
+			res += fmt.Sprintf("  url: %s\n", Sanitize(u.URL))
 			cnt++
 		}
-		l = len(content.Url)
+		l = len(content.URL)
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_URL {
@@ -215,17 +260,17 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			res += "\n"
 		}
 		cnt = 0
-		for i, ip := range content.Ip4 {
+		for i, ip := range content.IPv4 {
 			if o.Tag == OFFSET_IP4 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
 				break
 			}
-			res += fmt.Sprintf("  IP: %s\n", int2Ip4(ip.Ip4))
+			res += fmt.Sprintf("  IP: %s\n", int2Ip4(ip.IPv4))
 			cnt++
 		}
-		l = len(content.Ip4)
+		l = len(content.IPv4)
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_IP4 {
@@ -245,17 +290,17 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			res += "\n"
 		}
 		cnt = 0
-		for i, ip := range content.Ip6 {
+		for i, ip := range content.IPv6 {
 			if o.Tag == OFFSET_IP6 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
 				break
 			}
-			res += fmt.Sprintf("  IP: %s\n", net.IP(ip.Ip6).String())
+			res += fmt.Sprintf("  IP: %s\n", net.IP(ip.IPv6).String())
 			cnt++
 		}
-		l = len(content.Ip6)
+		l = len(content.IPv6)
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_IP6 {
@@ -275,17 +320,17 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			res += "\n"
 		}
 		cnt = 0
-		for i, sb := range content.Subnet4 {
+		for i, sb := range content.SubnetIPv4 {
 			if o.Tag == OFFSET_SUBNET4 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
 				break
 			}
-			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet4)
+			res += fmt.Sprintf("  Подсеть: %s\n", sb.SubnetIPv4)
 			cnt++
 		}
-		l = len(content.Subnet4)
+		l = len(content.SubnetIPv4)
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_SUBNET4 {
@@ -305,17 +350,17 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			res += "\n"
 		}
 		cnt = 0
-		for i, sb := range content.Subnet6 {
+		for i, sb := range content.SubnetIPv6 {
 			if o.Tag == OFFSET_SUBNET6 && i < o.Count {
 				continue
 			}
 			if cnt >= PRINT_LIMIT {
 				break
 			}
-			res += fmt.Sprintf("  Подсеть: %s\n", sb.Subnet6)
+			res += fmt.Sprintf("  Подсеть: %s\n", sb.SubnetIPv6)
 			cnt++
 		}
-		l = len(content.Subnet6)
+		l = len(content.SubnetIPv6)
 		if l > PRINT_LIMIT {
 			offset := 0
 			if o.Tag == OFFSET_SUBNET6 {
@@ -331,22 +376,30 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 			res += fmt.Sprintf("  \u2195 результаты с *%d* по *%d* из *%d*\n", offset+1, offset+cnt, l)
 			pages = append(pages, TPagination{OFFSET_SUBNET6, l})
 		}
+
 		break
 	}
+
 	res += printUpToDate(oldest)
+
 	return
 }
 
 func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagination) {
-	var mass string
-	var oldest int64 = MAX_TIMESTAMP
-	var ra []TReason
+	var (
+		mass   string
+		oldest int64 = MAX_TIMESTAMP
+		ra     []TReason
+	)
+
 	if len(a) == 0 {
 		return
 	}
+
 	sort.Slice(a, func(i, j int) bool {
 		return a[i].Id < a[j].Id
 	})
+
 	ra = make([]TReason, 1)
 	ra[0].Id = a[0].Id
 	if a[0].Aggr != "" {
@@ -405,6 +458,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 
 		}
 	}
+
 	sort.Slice(a, func(j, i int) bool {
 		switch {
 		case a[i].BlockType == TBLOCK_URL && a[j].BlockType != TBLOCK_URL:
@@ -428,6 +482,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			return false
 		}
 	})
+
 	offset := 0
 	if o.Tag == OFFSET_CONTENT {
 		switch {
@@ -439,31 +494,38 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			offset = o.Count
 		}
 	}
+
 	var cnt, cbu, cbh, cbd, cbm, cbi int
 	for i, packet := range a {
 		if o.Tag == OFFSET_CONTENT && i < offset {
 			continue
 		}
-		content := TContent{}
+
+		content := Content{}
 		err := json.Unmarshal(packet.Pack, &content)
 		if err != nil {
 			logger.Error.Printf("Упс!!! %s\n", err)
 			continue
 		}
+
 		if packet.RegistryUpdateTime < oldest {
 			oldest = packet.RegistryUpdateTime
 		}
+
 		var req TReason
+
 		for _, req = range ra {
 			if req.Id == packet.Id {
 				break
 			}
 		}
+
 		if len(req.Aggr) != 0 {
 			if packet.BlockType == TBLOCK_IP {
 				mass = "\U0001f4a5\U0001f4a5\U0001f4a5 Ресурс под «ковровой» блокировкой!!\n\n"
 			}
 		}
+
 		if cnt < PRINT_LIMIT {
 			bt := ""
 			switch packet.BlockType {
@@ -483,9 +545,9 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				bt = "\u274c "
 				cbi++
 			}
-			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.Id, dcs, Decision2base32(dcs))
-			res += fmt.Sprintf("\u2022 %s\n", constructBasis(&content))
+			dcs := fmt.Sprintf("%s %s %s", printOrg(content.Decision.Org), content.Decision.Number, content.Decision.Date)
+			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.ID, dcs, Decision2base32(dcs))
+			res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
@@ -510,9 +572,11 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 		}
 		cnt++
 	}
+
 	if mass != "" {
 		res = mass + res
 	}
+
 	if len(a) > PRINT_LIMIT {
 		pages = append(pages, TPagination{OFFSET_CONTENT, len(a)})
 		// rest := cnt - PRINT_LIMIT
