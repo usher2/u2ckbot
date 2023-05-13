@@ -516,7 +516,7 @@ func decisionSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagin
 		return fmt.Sprintf("\U0001f914 Что имелось ввиду?.. /n\\_%s: %s\n", s, err.Error()), nil
 	}
 
-	dcs := fmt.Sprintf("%s %s %s", printOrg(content.Decision.Org), content.Decision.Number, content.Decision.Date)
+	dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 
 	return fmt.Sprintf("\U0001f4dc /d\\_%s %s\n\n%s", s, dcs, res), pages
 }
