@@ -126,7 +126,7 @@ func Base32ToUint64(s string) (uint64, error) {
 	return 0, err
 }
 
-func Decision2base32(s string) string {
+func String2fnv2base32(s string) string {
 	h64 := fnv.New64a()
 	h64.Write([]byte(s))
 	return Uint64ToBase32(h64.Sum64())
@@ -180,7 +180,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 		blockType := BlockTypeView(packet.BlockType)
 
 		descisionString := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", blockType, content.ID, descisionString, Decision2base32(descisionString))
+		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", blockType, content.ID, descisionString, String2fnv2base32(descisionString))
 		res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
 		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 
@@ -546,7 +546,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				cbi++
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
-			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.ID, dcs, Decision2base32(dcs))
+			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.ID, dcs, String2fnv2base32(dcs))
 			res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {

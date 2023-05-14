@@ -88,6 +88,14 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						} else {
 							req = update.CallbackQuery.Message.Text[j1:]
 						}
+					case strings.Contains(update.CallbackQuery.Message.Text[:i], "/o_"):
+						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/o_")
+						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+						if j2 != -1 {
+							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						} else {
+							req = update.CallbackQuery.Message.Text[j1:]
+						}
 					}
 				}
 			}
@@ -330,6 +338,14 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 			args = strings.TrimPrefix(text, "^")
 		}
 		reply, pages = entryTypeSearch(c, args, offset)
+	case strings.HasPrefix(text, "/o_") || strings.HasPrefix(text, "!"):
+		args := ""
+		if strings.HasPrefix(text, "/o_") {
+			args = strings.TrimPrefix(text, "/o_")
+		} else if strings.HasPrefix(text, "!") {
+			args = strings.TrimPrefix(text, "!")
+		}
+		reply, pages = orgSearch(c, args, offset)
 	case strings.HasPrefix(text, "/"):
 		reply = "\U0001f523 iNJALID DEJICE\n"
 	default:

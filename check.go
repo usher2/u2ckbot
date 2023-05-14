@@ -12,7 +12,6 @@ import (
 	"strings"
 	"time"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/usher2/u2ckbot/internal/logger"
 	pb "github.com/usher2/u2ckbot/msg"
 )
@@ -96,7 +95,14 @@ func printSummary(s []byte) string {
 	})
 
 	for _, org := range orgs {
-		res += fmt.Sprintf("    *%s*: %d\n", org, stats.DecisionOrgs[org])
+		num := stats.DecisionOrgs[org]
+		switch {
+		case num < 2000:
+			res += fmt.Sprintf("    *%s* /o\\_%s : %d\n", org, Sanitize(String2fnv2base32(org)), num)
+		default:
+
+			res += fmt.Sprintf("    *%s*: %d\n", org, num)
+		}
 	}
 
 	res += "\n_Записей по типам решений:_\n"
@@ -114,17 +120,18 @@ func printSummary(s []byte) string {
 		link, desc, _ := strings.Cut(DecisionTypeView(t), ",")
 		num := stats.EntryTypes[t]
 		switch {
-		case num < 500:
-			res += fmt.Sprintf("    %s, *%s* /e\\_%s : %d\n", link, desc, tgbotapi.EscapeText(tgbotapi.ModeMarkdown, t), num)
+		case num < 2000:
+			res += fmt.Sprintf("    %s, *%s* /e\\_%s : %d\n", link, desc, Sanitize(t), num)
 		default:
 			res += fmt.Sprintf("    %s, *%s*: %d\n", link, desc, num)
 		}
 	}
 
 	res += fmt.Sprintf("\n*Самая большая запись (%3.1f MB):* /n\\_%d\n", float64(stats.LargestSizeOfContent)/1024/1024, stats.LargestSizeOfContentCintentID)
-	res += "_(починю паджинацию попозже)_\n"
 
 	res += fmt.Sprintf("*Больше всего ссылок (%d) на объект:* `%s`\n", stats.MaxItemReferences, stats.MaxItemReferencesString)
+
+	res += fmt.Sprintf("*Решений без номера (б/н):* %d\n", stats.EntriesWithoutDecisionNo)
 
 	res += printUpToDate(stats.UpdateTime)
 
@@ -317,6 +324,28 @@ func searchEntryType(c pb.CheckClient, s string) (int64, []*pb.Content, string) 
 	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
+func searchOrg(c pb.CheckClient, s uint64) (int64, []*pb.Content, string, string) {
+	logger.Info.Printf("Looking for org %x\n", s)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	r, err := c.SearchOrg(ctx, &pb.OrgRequest{Query: s})
+	if err != nil {
+		logger.Debug.Printf("%v.SearchOrg(_) = _, %v\n", c, err)
+
+		return MAX_TIMESTAMP, nil, "", ErrorMessageSomethingGoingWrong
+	}
+
+	if r.Error != "" {
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, "", errMsgTryAgainLater(r.Error)
+	}
+
+	return r.RegistryUpdateTime, r.Results[:], r.Query, ""
+}
+
 func searchDecision(c pb.CheckClient, decision uint64) (int64, []*pb.Content, string) {
 	logger.Info.Printf("Looking for &%d\n", decision)
 
@@ -441,7 +470,37 @@ func entryTypeSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagi
 
 	res, pages := constructResult(a, o)
 
-	return fmt.Sprintf("\U0001f4dc /e\\_%s\n\n%s\n", Sanitize(s), res), pages
+	return fmt.Sprintf("\U0001f4dc /e\\_%s | %s\n\n%s\n", Sanitize(s), DecisionTypeView(s), res), pages
+}
+
+func orgSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
+	var oldestRecordTimestamp int64 = MAX_TIMESTAMP
+
+	if len(s) == 0 {
+		return "\U0001f914 Что имелось ввиду?..\n", nil
+	}
+
+	query, err := Base32ToUint64(s)
+	if err != nil {
+		return "\U0001f914 Что имелось ввиду?..\n", nil
+	}
+
+	recordUpdateTimestamp, a, org, errMsg := searchOrg(c, query)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if recordUpdateTimestamp < oldestRecordTimestamp {
+		oldestRecordTimestamp = recordUpdateTimestamp
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 %s *не найден*\n%s", s, printUpToDate(oldestRecordTimestamp)), nil
+	}
+
+	res, pages := constructResult(a, o)
+
+	return fmt.Sprintf("\U0001f4dc *%s* /o\\_%s\n\n%s\n", Sanitize(org), Sanitize(s), res), pages
 }
 
 // numberSearch - searches for a internal Roscomnadzor record number.
