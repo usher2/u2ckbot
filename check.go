@@ -131,7 +131,7 @@ func printSummary(s []byte) string {
 
 	res += fmt.Sprintf("*Больше всего ссылок (%d) на объект:* `%s`\n", stats.MaxItemReferences, stats.MaxItemReferencesString)
 
-	res += fmt.Sprintf("*Решений без номера (б/н):* %d\n", stats.EntriesWithoutDecisionNo)
+	res += fmt.Sprintf("*Решений без номера (б/н):* %d  /wn\n", stats.EntriesWithoutDecisionNo)
 
 	res += printUpToDate(stats.UpdateTime)
 
@@ -324,6 +324,28 @@ func searchEntryType(c pb.CheckClient, s string) (int64, []*pb.Content, string) 
 	return r.RegistryUpdateTime, r.Results[:], ""
 }
 
+func searchWithoutNo(c pb.CheckClient) (int64, []*pb.Content, string) {
+	logger.Info.Println("Looking for without No")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	r, err := c.SearchWithoutNo(ctx, &pb.WithoutNoRequest{Query: "ST"})
+	if err != nil {
+		logger.Debug.Printf("%v.SearchWithoutNo(_) = _, %v\n", c, err)
+
+		return MAX_TIMESTAMP, nil, ErrorMessageSomethingGoingWrong
+	}
+
+	if r.Error != "" {
+		logger.Debug.Printf("ERROR: %s\n", r.Error)
+
+		return MAX_TIMESTAMP, nil, errMsgTryAgainLater(r.Error)
+	}
+
+	return r.RegistryUpdateTime, r.Results[:], ""
+}
+
 func searchOrg(c pb.CheckClient, s uint64) (int64, []*pb.Content, string, string) {
 	logger.Info.Printf("Looking for org %x\n", s)
 
@@ -471,6 +493,27 @@ func entryTypeSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagi
 	res, pages := constructResult(a, o)
 
 	return fmt.Sprintf("\U0001f4dc /e\\_%s | %s\n\n%s\n", Sanitize(s), DecisionTypeView(s), res), pages
+}
+
+func withoutNoSearch(c pb.CheckClient, o TPagination) (string, []TPagination) {
+	var oldestRecordTimestamp int64 = MAX_TIMESTAMP
+
+	recordUpdateTimestamp, a, errMsg := searchWithoutNo(c)
+	if errMsg != "" {
+		return errMsg + "\n", nil
+	}
+
+	if recordUpdateTimestamp < oldestRecordTimestamp {
+		oldestRecordTimestamp = recordUpdateTimestamp
+	}
+
+	if len(a) == 0 {
+		return fmt.Sprintf("\U0001f914 *не найдено*\n%s", printUpToDate(oldestRecordTimestamp)), nil
+	}
+
+	res, pages := constructResult(a, o)
+
+	return fmt.Sprintf("\U0001f4dc /wn\n\n%s\n", res), pages
 }
 
 func orgSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {

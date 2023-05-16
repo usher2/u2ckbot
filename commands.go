@@ -96,6 +96,14 @@ func botUpdates(c pb.CheckClient, bot *tb.BotAPI, updatesChan tb.UpdatesChannel)
 						} else {
 							req = update.CallbackQuery.Message.Text[j1:]
 						}
+					case strings.Contains(update.CallbackQuery.Message.Text[:i], "/wn"):
+						j1 := strings.Index(update.CallbackQuery.Message.Text[:i], "/wn")
+						j2 := strings.IndexByte(update.CallbackQuery.Message.Text[j1:i], ' ')
+						if j2 != -1 {
+							req = update.CallbackQuery.Message.Text[j1 : j1+j2]
+						} else {
+							req = update.CallbackQuery.Message.Text[j1:]
+						}
 					}
 				}
 			}
@@ -306,6 +314,8 @@ func Talks(c pb.CheckClient, bot *tb.BotAPI, uname string, chat *tb.Chat, inline
 		reply = Ping(c)
 	case text == "/sum":
 		reply = Summarize(c)
+	case text == "/wn":
+		reply, pages = withoutNoSearch(c, offset)
 	case text == "/ck" || text == "/check" || text == "/x":
 		reply = HelpMessage
 	case strings.HasPrefix(text, "/ck ") || strings.HasPrefix(text, "/check "):
