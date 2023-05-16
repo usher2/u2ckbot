@@ -513,7 +513,7 @@ func withoutNoSearch(c pb.CheckClient, o TPagination) (string, []TPagination) {
 
 	res, pages := constructResult(a, o)
 
-	return fmt.Sprintf("\U0001f4dc /wn\n\n%s\n", res), pages
+	return fmt.Sprintf("\U0001f4dc /wn *решения суда без номера* (скорее всего их нет)\n\n%s\n", res), pages
 }
 
 func orgSearch(c pb.CheckClient, s string, o TPagination) (string, []TPagination) {
