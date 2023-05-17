@@ -107,9 +107,15 @@ func printSummary(s []byte) string {
 
 	res += "\n_Записей по типам решений:_\n"
 
-	types := make([]string, 0, len(stats.EntryTypes))
-	for t := range stats.EntryTypes {
+	types := make([]string, 0, len(DecisionTypesDesc))
+	for t := range DecisionTypesDesc {
 		types = append(types, t)
+	}
+
+	for t := range stats.EntryTypes {
+		if _, ok := DecisionTypesDesc[t]; !ok {
+			types = append(types, t)
+		}
 	}
 
 	sort.Slice(types, func(i, j int) bool {
