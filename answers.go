@@ -548,30 +548,34 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				bt = "\u274c "
 				cbi++
 			}
+
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.ID, dcs, String2fnv2base32(dcs))
 			res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org), content.Decision.Number))
+
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
 				}
 			}
+
 			if len(req.Ip) != 0 {
 				for _, ip := range req.Ip {
 					res += fmt.Sprintf("    _как ip_ %s\n", ip)
 				}
 			}
+
 			if len(req.Domain) != 0 {
 				for _, domain := range req.Domain {
 					res += fmt.Sprintf("    _как domain_ %s\n", Sanitize(PrintedDomain(domain)))
 				}
 			}
+
 			if len(req.Url) != 0 {
 				for _, u := range req.Url {
 					res += fmt.Sprintf("    _как url_ %s\n", Sanitize(PrintedDomain(u)))
 				}
 			}
-			res += "\n"
 
 			points := ""
 			switch packet.BlockType {
@@ -649,6 +653,8 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 
 				res += fmt.Sprintf("  ips: %s%s\n", strings.Join(ips, ", "), points)
 			}
+
+			res += "\n"
 		}
 		cnt++
 	}
