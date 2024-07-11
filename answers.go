@@ -58,16 +58,17 @@ type TReason struct {
 }
 
 var DecisionTypesDesc = map[string]string{
-	"15_1":   "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая",
-	"15_1_1": "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение",
-	"15_2":   "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание",
-	"15_3":   "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки",
-	"15_4":   "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ не молчи",
-	"15_6":   "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная",
-	"15_6_1": "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал",
-	"15_5":   "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные",
-	"15_8":   "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN",
-	"15_9":   "[ст. 15.9](http://www.consultant.ru/document/cons_doc_LAW_61798/31eb19e991d54b484ac546107c4db838b3631e9f/), сайт иноагента",
+	"15_1_1m": "[ст. 15.1 пункт 1 попдункт м](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), каталог VPN",
+	"15_1":    "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая",
+	"15_1_1":  "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение",
+	"15_2":    "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание",
+	"15_3":    "[ст. 15.3](http://www.consultant.ru/document/cons_doc_LAW_61798/34547c9b6ddb60cebd0a67593943fd9ef64ebdd0/), мятеж и фейки",
+	"15_4":    "[ст. 15.4](http://www.consultant.ru/document/cons_doc_LAW_61798/96723dcd9be73473a978013263f16f42cd8cd53d/), ОРИ не молчи",
+	"15_6":    "[ст. 15.6](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная",
+	"15_6_1":  "[ст. 15.6-1](http://www.consultant.ru/document/cons_doc_LAW_61798/c7c4ad36689c46c7e8a3ab49c9db8ccbc7c82920/), вечная зеркал",
+	"15_5":    "[ст. 15.5](http://www.consultant.ru/document/cons_doc_LAW_61798/98228cbe6565abbe55d0842a7e8593012c3449ea/), персональные данные",
+	"15_8":    "[ст. 15.8](http://www.consultant.ru/document/cons_doc_LAW_61798/1a807328c80a540bd0bb724927d6e774595431dc/), VPN",
+	"15_9":    "[ст. 15.9](http://www.consultant.ru/document/cons_doc_LAW_61798/31eb19e991d54b484ac546107c4db838b3631e9f/), сайт иноагента",
 }
 
 func DecisionTypeView(t string) string {
@@ -132,8 +133,10 @@ func String2fnv2base32(s string) string {
 	return Uint64ToBase32(h64.Sum64())
 }
 
-func constructBasis(entryType int32, org string) string {
+func constructBasis(entryType int32, org, number string) string {
 	switch {
+	case entryType == 1 && org == "Роскомнадзор" && strings.HasSuffix(number, "-СОБ"):
+		return DecisionTypeView("15.1.1m")
 	case entryType == 1 && (org == "Генпрокуратура" || org == ""):
 		return DecisionTypeView("15.1-1")
 	case entryType == 2:
@@ -181,7 +184,7 @@ func constructContentResult(a []*pb.Content, o TPagination) (res string, pages [
 
 		descisionString := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 		res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", blockType, content.ID, descisionString, String2fnv2base32(descisionString))
-		res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
+		res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org), content.Decision.Number))
 		res += fmt.Sprintf("внесено: %s\n", time.Unix(content.IncludeTime, 0).In(time.FixedZone("UTC+3", 3*60*60)).Format(time.RFC3339))
 
 		if len(content.SubnetIPv4)+len(content.SubnetIPv6) > 0 && packet.BlockType == TBLOCK_IP {
@@ -547,7 +550,7 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 			}
 			dcs := fmt.Sprintf("%s %s %s", content.Decision.Org, content.Decision.Number, content.Decision.Date)
 			res += fmt.Sprintf("%s /n\\_%d %s /d\\_%s\n", bt, content.ID, dcs, String2fnv2base32(dcs))
-			res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org)))
+			res += fmt.Sprintf("\u2022 %s\n", constructBasis(content.EntryType, printOrg(content.Decision.Org), content.Decision.Number))
 			if len(req.Aggr) != 0 {
 				for _, nw := range req.Aggr {
 					res += fmt.Sprintf("    _как подсеть_ %s\n", nw)
