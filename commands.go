@@ -232,7 +232,7 @@ func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, 
 			text += "--- \n" + DonateFooter
 			noAdCount = 0
 		} else {
-			// text += Footer
+			text += Footer
 			noAdCount++
 		}
 		if messageId > 0 {
