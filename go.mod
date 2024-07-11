@@ -1,6 +1,6 @@
 module github.com/usher2/u2ckbot
 
-go 1.21
+go 1.22
 
 require (
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
