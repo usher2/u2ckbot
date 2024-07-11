@@ -58,7 +58,7 @@ type TReason struct {
 }
 
 var DecisionTypesDesc = map[string]string{
-	"15_1_1m": "[ст. 15.1 пункт 1 попдункт м](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), каталог VPN",
+	"15_1_1m": "[ст. 15.1 п.1(м)](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), каталог VPN",
 	"15_1":    "[ст. 15.1](http://www.consultant.ru/document/cons_doc_LAW_61798/38c8ea666d27d9dc12b078c556e316e90248f551/), общая",
 	"15_1_1":  "[ст. 15.1-1](http://www.consultant.ru/document/cons_doc_LAW_61798/079aac275ffc6cea954b19c5b177a547b94f3c48/), неуважение",
 	"15_2":    "[ст. 15.2](http://www.consultant.ru/document/cons_doc_LAW_61798/1f316dc4a18023edcd030bc6591c4dd8b4f841dc/), правообладание",

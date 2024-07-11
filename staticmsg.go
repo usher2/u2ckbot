@@ -56,7 +56,8 @@ const (
 		"TON: `EQBrl8BNLWNVvmSCZDNexzoGQLIojnp4xNDT6Wf4AFX4S\\_57`\n\n"
 		//"\U0001f36d Мой вишлист: http://mywishlist.ru/me/schors\n\n"
 
-	Footer string = "" /*"--- \n" +
+	Footer string = "\U0001f449 сведения предоставил бот: https://t.me/usher2 \n"
+	/*"--- \n" +
 	"Часть проекта @usher2\n\n" /*+
 	"\U000026a0 Я хочу тонко намекнуть на толстые обстоятельства. " +
 	"Сейчас весь краудфайндинг в 0 уходит на оплату " +
