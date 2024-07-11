@@ -572,6 +572,83 @@ func constructResult(a []*pb.Content, o TPagination) (res string, pages []TPagin
 				}
 			}
 			res += "\n"
+
+			points := ""
+			switch packet.BlockType {
+			case TBLOCK_URL:
+				l := len(content.URL)
+				if l > PRINT_LIMIT {
+					l = PRINT_LIMIT
+					points = "..."
+				}
+
+				urls := make([]string, 0, l)
+				for _, u := range content.URL[:l] {
+					urls = append(urls, Sanitize(u.URL))
+				}
+
+				res += fmt.Sprintf("  urls: %s%s\n", strings.Join(urls, ", "), points)
+			case TBLOCK_HTTPS, TBLOCK_DOMAIN, TBLOCK_MASK:
+				l := len(content.Domain)
+				if l > PRINT_LIMIT {
+					l = PRINT_LIMIT
+					points = "..."
+				}
+
+				domains := make([]string, 0, l)
+				for _, d := range content.Domain[:l] {
+					domains = append(domains, Sanitize(d.Domain))
+				}
+
+				res += fmt.Sprintf("  domains: %s%s\n", strings.Join(domains, ", "), points)
+			case TBLOCK_IP:
+				l := len(content.IPv4) + len(content.IPv6) + len(content.SubnetIPv4) + len(content.SubnetIPv6)
+				if l > PRINT_LIMIT {
+					l = PRINT_LIMIT
+					points = "..."
+				}
+
+				ips := make([]string, 0, l)
+
+				cnt := PRINT_LIMIT
+				for _, ip := range content.IPv4 {
+					if cnt == 0 {
+						break
+					}
+
+					ips = append(ips, int2Ip4(ip.IPv4))
+					cnt--
+				}
+
+				for _, ip := range content.IPv6 {
+					if cnt == 0 {
+						break
+					}
+
+					ips = append(ips, net.IP(ip.IPv6).String())
+					cnt--
+				}
+
+				for _, sb := range content.SubnetIPv4 {
+					if cnt == 0 {
+						break
+					}
+
+					ips = append(ips, sb.SubnetIPv4)
+					cnt--
+				}
+
+				for _, sb := range content.SubnetIPv6 {
+					if cnt == 0 {
+						break
+					}
+
+					ips = append(ips, sb.SubnetIPv6)
+					cnt--
+				}
+
+				res += fmt.Sprintf("  ips: %s%s\n", strings.Join(ips, ", "), points)
+			}
 		}
 		cnt++
 	}

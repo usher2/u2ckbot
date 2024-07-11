@@ -229,7 +229,7 @@ func makePagination(offset TPagination, pages []TPagination) tb.InlineKeyboardMa
 func sendMessage(bot *tb.BotAPI, chat *tb.Chat, inlineId string, messageId int, text string, offset TPagination, pages []TPagination) {
 	if chat != nil {
 		if noAdCount >= NO_AD_NUMBER || strings.Contains(text, "Сводная статистика по выгрузке") {
-			text += "--- \n" + DonateFooter
+			text += Footer + "--- \n" + DonateFooter
 			noAdCount = 0
 		} else {
 			text += Footer
